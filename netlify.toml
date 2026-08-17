@@ -1,0 +1,12 @@
+[build]
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/relay/*"
+  to = "/relay/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/vr/*"
+  to = "/vr/index.html"
+  status = 200

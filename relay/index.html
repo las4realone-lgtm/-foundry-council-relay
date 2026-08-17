@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Foundry Council Relay v0</title>
+  <style>
+    :root{--ink:#18201c;--muted:#69736d;--paper:#f3f0e7;--card:#fffdf7;--line:#d8d3c7;--accent:#b95432;--teal:#236c64;--gold:#c79a3b;--shadow:0 14px 40px #28352d12}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#ece8dd,#f7f4ec 45%,#e8eee9);color:var(--ink);font:15px/1.45 Inter,Segoe UI,sans-serif;min-height:100vh}button,input,textarea,select{font:inherit}.shell{max-width:1460px;margin:auto;padding:28px}.mast{display:flex;justify-content:space-between;gap:20px;align-items:end;border-bottom:1px solid var(--line);padding-bottom:20px}.eyebrow{font:700 11px/1.2 monospace;letter-spacing:.18em;color:var(--accent)}h1{font:600 38px/1.05 Georgia,serif;margin:8px 0 4px}.sub{color:var(--muted);max-width:720px}.badge{border:1px solid var(--teal);color:var(--teal);padding:7px 10px;border-radius:99px;font:700 11px monospace}.grid{display:grid;grid-template-columns:minmax(290px,.72fr) minmax(400px,1.2fr) minmax(300px,.8fr);gap:16px;margin-top:18px}.col{display:grid;gap:16px;align-content:start}.card{background:color-mix(in srgb,var(--card) 94%,transparent);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}h2{font:600 19px Georgia,serif;margin:0 0 13px}h3{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:16px 0 8px}.field{display:grid;gap:6px;margin:10px 0}.field span{font-size:12px;font-weight:700;color:var(--muted)}textarea,input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;color:var(--ink)}textarea{min-height:84px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--ink);color:white;font-weight:700;cursor:pointer}.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}.btn.warn{background:var(--accent)}.btn:focus{outline:3px solid #c79a3b55}.mono{font-family:ui-monospace,Consolas,monospace;font-size:12px}.envelope{white-space:pre-wrap;word-break:break-word;max-height:360px;overflow:auto;background:#1e2924;color:#e8eee9;padding:15px;border-radius:11px}.route{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.node{border:1px solid var(--line);border-radius:99px;padding:6px 9px;background:white}.node.active{background:var(--teal);color:white;border-color:var(--teal)}.arrow{color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.metric{padding:11px;background:#f5f2e9;border-radius:10px}.metric b{display:block;font:700 19px Georgia,serif}.metric span{font-size:11px;color:var(--muted)}.notice{border-left:3px solid var(--gold);padding:9px 11px;background:#fff8e5;margin:10px 0}.notice.ok{border-color:var(--teal);background:#ecf7f3}.notice.bad{border-color:var(--accent);background:#fff0eb}.history{display:grid;gap:8px;max-height:390px;overflow:auto}.event{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.event small{color:var(--muted)}.event b{display:block}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.empty{color:var(--muted);font-style:italic}.footer{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}@media(max-width:1050px){.grid{grid-template-columns:1fr 1fr}.col:last-child{grid-column:1/-1}}@media(max-width:700px){.shell{padding:18px}.grid{grid-template-columns:1fr}.col:last-child{grid-column:auto}.mast{align-items:start;flex-direction:column}h1{font-size:31px}}
+  </style>
+</head>
+<body><main class="shell">
+  <header class="mast"><div><div class="eyebrow">MANUAL TRANSPORT · CANONICAL ROUTING</div><h1>Foundry Council Relay v0</h1><div class="sub">A separate local harness for exact references, deterministic routing, fuel-bound zigzags, and causal provenance.</div></div><div class="badge">LOCAL · NO PROVIDERS</div></header>
+  <section class="grid" style="margin-bottom:8px">
+    <div class="card" style="grid-column:1/-1; display:flex; gap:10px; align-items:center">
+      <b>UNIFIED MODE:</b> <span>This relay auto-syncs to localStorage <code>foundry_relay_v0_ledger</code> so your V6-A VR can read it. Open vr/index.html in same browser.</span>
+      <button class="btn alt" onclick="navigator.clipboard.writeText(localStorage.getItem('foundry_relay_v0_ledger')||'{}'); alert('Ledger copied')">Copy ledger for VR</button>
+    </div>
+  </section>
+  <section class="grid">
+    <div class="col">
+      <section class="card"><h2>New Claim</h2><label class="field"><span>Exact claim</span><textarea id="claim" placeholder="Enter the claim exactly as it must remain bound…"></textarea></label><label class="field"><span>Optional starter</span><select id="starter"><option value="">Default → Node 2</option><option value="2">2 · Veyra</option><option value="3">3 · Council 3</option><option value="4">4 · Council 4</option><option value="5">5 · Council 5</option></select></label><div class="split"><label class="field"><span>Zigzag fuel</span><input id="fuel" type="number" min="0" value="2"></label><label class="field"><span>Parent claim (optional)</span><input id="parentClaim" placeholder="claim_id"></label></div><button class="btn" id="openClaim">Open canonical claim</button></section>
+      <section class="card"><h2>Context Recovery</h2><div class="notice"><b>RECOVERED_CONTEXT</b><br>Orientation only. Never changes canonical truth.</div><label class="field"><span>Orientation notes</span><textarea id="recovered" placeholder="Paste non-canonical context here…"></textarea></label><button class="btn alt" id="saveContext">Save orientation</button><div class="notice ok"><b>VERIFIED_STATE</b><br><span id="verified">No canonical state yet.</span></div></section>
+      <section class="card"><h2>Portable State</h2><div class="row"><button class="btn alt" id="exportState">Export JSON</button><label class="btn alt" style="text-align:center;cursor:pointer">Import JSON<input id="importState" type="file" accept="application/json" hidden></label></div><button class="btn alt" id="selfTest" style="width:100%;margin-top:8px">Run routing self-test</button><div id="testResult"></div></section>
+    </div>
+    <div class="col">
+      <section class="card"><h2>Active Relay</h2><h3>Current canonical envelope</h3><div id="current" class="envelope">No active envelope.</div><div class="row" style="margin-top:9px"><button class="btn alt" id="copyEnvelope">Copy envelope</button><button class="btn alt" id="copyPayload">Copy response payload</button></div><h3>Paste response</h3><textarea id="response" style="min-height:250px" placeholder="Copy the response payload, complete it, then paste JSON here."></textarea><div class="row" style="margin-top:9px"><button class="btn" id="validate">Validate & route</button><button class="btn warn" id="clearResponse">Clear</button></div><div id="validation"></div></section>
+    </div>
+    <div class="col">
+      <section class="card"><h2>Route State</h2><div id="route" class="route"></div><div class="metrics" style="margin-top:13px"><div class="metric"><b id="fuelMetric">0</b><span>fuel remaining</span></div><div class="metric"><b id="visitMetric">0</b><span>canonical visits</span></div><div class="metric"><b id="yieldMetric">0</b><span>yielded nodes</span></div><div class="metric"><b id="unresolvedMetric">0</b><span>unresolved claims</span></div></div><h3>Machine state</h3><div id="machine" class="mono"></div></section>
+      <section class="card"><h2>History</h2><div class="sub" style="margin-bottom:10px">Canonical envelopes only.</div><div id="history" class="history"><div class="empty">No canonical history.</div></div></section>
+    </div>
+  </section><div class="footer">Relay v0 is isolated from Foundry Hub, IndexedDB, ledgers, proposals, hosting, and provider APIs.</div>
+  <script type="module">
+const NODES = {
+  1: "Architect", 2: "Veyra", 3: "Council 3", 4: "Council 4", 5: "Council 5"
+};
+
+const STATES = ["ANSWERED", "UNRESOLVED", "CLARIFY_REFERENCE", "NO_RESPONSE", "CLOSED"];
+
+const uid = () => `msg_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+const now = () => new Date().toISOString();
+const nodeNumber = value => Number(String(value).match(/[1-5]/)?.[0] || value);
+
+function nextDefault(node, yielded = []) {
+  let candidate = node === 5 ? 1 : node + 1;
+  for (let i = 0; i < 5 && candidate !== 1 && yielded.includes(candidate); i += 1) {
+    candidate = candidate === 5 ? 1 : candidate + 1;
+  }
+  return candidate;
+}
+
+function newState() {
+  return {
+    version: "Foundry Council Relay v0",
+    origin: 1,
+    active_claim: null,
+    parent_claim: null,
+    current_node: 1,
+    direct_reference: null,
+    fuel: 0,
+    yielded_nodes: [],
+    next_node: null,
+    visits: [],
+    unresolved: [],
+    history: [],
+    recovered_context: "",
+    verified_at: null
+  };
+}
+
+function openClaim(state, { claim, starter = null, fuel = 1, parentClaim = null }) {
+  if (!claim?.trim()) throw new Error("Claim text is required.");
+  const s = structuredClone(state);
+  const chosen = starter ? nodeNumber(starter) : 2;
+  if (![1, 2, 3, 4, 5].includes(chosen)) throw new Error("Starter must be node 1–5.");
+  const claimId = `claim_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  const envelope = {
+    message_id: uid(), timestamp: now(), canonical: true,
+    IDENTITY: { sender: 1, role_signature: "Architect / Origin" },
+    REFERENCE: { claim_id: claimId, claim_excerpt: claim.trim() },
+    CONTENT: { message: claim.trim(), claim_relation: "ORIGIN" },
+    ROUTING: { next: chosen, route_reason: starter ? "ARCHITECT_EXPLICIT_STARTER" : "DEFAULT_ORDER", visit: 1 },
+    CONTROL: { fuel_remaining: Math.max(0, Number(fuel) || 0), state: "UNRESOLVED" },
+    PROVENANCE: { parent_message: null }
+  };
+  Object.assign(s, {
+    active_claim: { claim_id: claimId, claim_excerpt: claim.trim() },
+    parent_claim: parentClaim || null,
+    current_node: chosen,
+    direct_reference: null,
+    fuel: envelope.CONTROL.fuel_remaining,
+    yielded_nodes: [], next_node: chosen, visits: [1], unresolved: [claimId],
+    history: [...s.history, envelope], verified_at: now()
+  });
+  return s;
+}
+
+function responseTemplate(state) {
+  const parent = state.history.at(-1);
+  if (!parent || !state.active_claim) throw new Error("Open a claim first.");
+  return {
+    IDENTITY: { sender: state.current_node, role_signature: NODES[state.current_node] },
+    REFERENCE: { ...state.active_claim },
+    CONTENT: { message: "", claim_relation: "ANSWER" },
+    ROUTING: { next: null, route_reason: "DEFAULT_ORDER", visit: state.visits.length + 1 },
+    CONTROL: { fuel_remaining: state.fuel, state: "ANSWERED" },
+    PROVENANCE: { parent_message: parent.message_id },
+    direct_reference: null
+  };
+}
+
+function acceptResponse(state, input) {
+  const s = structuredClone(state);
+  const parent = s.history.at(-1);
+  if (!parent || !s.active_claim) throw new Error("There is no active claim.");
+  const sender = nodeNumber(input?.IDENTITY?.sender);
+  const exactBinding = input?.REFERENCE?.claim_id === s.active_claim.claim_id &&
+    input?.REFERENCE?.claim_excerpt === s.active_claim.claim_excerpt;
+  const exactParent = input?.PROVENANCE?.parent_message === parent.message_id;
+  const senderExpected = sender === s.current_node;
+  if (!exactBinding || !exactParent || !senderExpected) {
+    const reasons = [!exactBinding && "claim/reference mismatch", !exactParent && "parent_message mismatch", !senderExpected && "unexpected sender"].filter(Boolean);
+    return { state: s, accepted: false, status: "CLARIFY_REFERENCE", reason: reasons.join("; ") };
+  }
+  if (!input?.CONTENT?.message?.trim() && input?.CONTROL?.state !== "NO_RESPONSE") {
+    return { state: s, accepted: false, status: "NO_RESPONSE", reason: "Response message is empty." };
+  }
+  const requestedState = STATES.includes(input?.CONTROL?.state) ? input.CONTROL.state : "ANSWERED";
+  const yielded = input?.CONTENT?.claim_relation === "YIELD";
+  if (yielded && !s.yielded_nodes.includes(sender)) s.yielded_nodes.push(sender);
+  const direct = input?.direct_reference == null || input.direct_reference === "" ? null : nodeNumber(input.direct_reference);
+  const defaultNext = nextDefault(sender, s.yielded_nodes);
+  let next = defaultNext;
+  let reason = "DEFAULT_ORDER";
+  let fuel = s.fuel;
+  if (direct) {
+    if (![1, 2, 3, 4, 5].includes(direct)) throw new Error("Direct reference must be node 1–5.");
+    fuel = Math.max(0, fuel - 1);
+    next = fuel === 0 ? 1 : direct;
+    reason = fuel === 0 ? "FUEL_EXHAUSTED_RETURN_TO_ARCHITECT" : "DIRECT_RELEVANCE_ZIGZAG";
+  }
+  if (requestedState === "CLOSED") { next = null; reason = "ARCHITECT_CLOSED"; }
+  const envelope = {
+    message_id: uid(), timestamp: now(), canonical: true,
+    IDENTITY: { sender, role_signature: String(input.IDENTITY.role_signature || NODES[sender]) },
+    REFERENCE: { ...s.active_claim },
+    CONTENT: { message: input.CONTENT.message.trim(), claim_relation: String(input.CONTENT.claim_relation || "ANSWER") },
+    ROUTING: { next, route_reason: reason, visit: s.visits.length + 1 },
+    CONTROL: { fuel_remaining: fuel, state: requestedState },
+    PROVENANCE: { parent_message: parent.message_id }
+  };
+  s.history.push(envelope);
+  s.visits.push(sender);
+  s.direct_reference = direct;
+  s.fuel = fuel;
+  s.next_node = next;
+  s.current_node = next || 1;
+  if (requestedState === "UNRESOLVED" && !s.unresolved.includes(s.active_claim.claim_id)) s.unresolved.push(s.active_claim.claim_id);
+  if (requestedState === "ANSWERED" || requestedState === "CLOSED") s.unresolved = s.unresolved.filter(x => x !== s.active_claim.claim_id);
+  if (requestedState === "CLOSED") s.active_claim = null;
+  s.verified_at = now();
+  return { state: s, accepted: true, status: requestedState, envelope };
+}
+
+function verifyImport(candidate) {
+  if (!candidate || candidate.version !== "Foundry Council Relay v0" || !Array.isArray(candidate.history)) throw new Error("Not a Relay v0 state export.");
+  candidate.history.forEach((e, i) => {
+    if (!e.canonical || !e.message_id || !e.REFERENCE?.claim_id) throw new Error(`Invalid canonical envelope at history index ${i}.`);
+    if (i && e.PROVENANCE?.parent_message !== candidate.history[i - 1].message_id) throw new Error(`Broken parent_message chain at history index ${i}.`);
+  });
+  return { ...newState(), ...structuredClone(candidate), verified_at: now() };
+}
+
+function runSelfTest() {
+  let s = openClaim(newState(), { claim: "Should Relay v0 preserve causal routing?", fuel: 2 });
+  const origin = s.history[0];
+  const t2 = responseTemplate(s); t2.CONTENT.message = "Node 2 answers.";
+  let r = acceptResponse(s, t2); s = r.state;
+  const defaultPass = r.accepted && s.current_node === 3 && s.fuel === 2;
+  const t3 = responseTemplate(s); t3.CONTENT.message = "Node 3 calls Node 2 back."; t3.direct_reference = 2;
+  r = acceptResponse(s, t3); s = r.state;
+  const zigzagPass = r.accepted && s.current_node === 2 && s.fuel === 1 && r.envelope.ROUTING.route_reason === "DIRECT_RELEVANCE_ZIGZAG";
+  const t2b = responseTemplate(s); t2b.CONTENT.message = "Node 2 calls Node 3 directly."; t2b.direct_reference = 3;
+  r = acceptResponse(s, t2b); s = r.state;
+  const returnPass = r.accepted && s.current_node === 1 && s.fuel === 0 && r.envelope.ROUTING.route_reason === "FUEL_EXHAUSTED_RETURN_TO_ARCHITECT";
+  const parentPass = s.history.every((e, i) => i === 0 ? e.PROVENANCE.parent_message === null : e.PROVENANCE.parent_message === s.history[i - 1].message_id);
+  return { pass: defaultPass && zigzagPass && returnPass && parentPass, defaultPass, zigzagPass, returnPass, parentPass, envelopes: s.history.length, origin: origin.message_id };
+}
+
+
+let state = newState();
+// --- UNIFIED PATCH: shared ledger for VR ---
+const LEDGER_KEY = 'foundry_relay_v0_ledger';
+function syncLedger() {
+  try {
+    const ledger = {
+      version: state.version,
+      active_claim: state.active_claim,
+      parent_claim: state.parent_claim,
+      current_node: state.current_node,
+      next_node: state.next_node,
+      fuel: state.fuel,
+      yielded_nodes: state.yielded_nodes,
+      visits: state.visits,
+      history: state.history,
+      verified_at: state.verified_at,
+      recovered_context: state.recovered_context
+    };
+    localStorage.setItem(LEDGER_KEY, JSON.stringify(ledger));
+    // also keep in shared folder if file:// access allows
+    window.__foundry_ledger = ledger;
+  } catch(e) {}
+}
+// wrap render to also sync
+const _orig_newState = newState;
+
+const $ = id => document.getElementById(id);
+const pretty = value => JSON.stringify(value, null, 2);
+const note = (id, text, kind = 'ok') => $(id).innerHTML = `<div class="notice ${kind}">${text}</div>`;
+
+function render() { syncLedger();
+  const last = state.history.at(-1);
+  $('current').textContent = last ? pretty(last) : 'No active envelope.';
+  $('fuelMetric').textContent = state.fuel;
+  $('visitMetric').textContent = state.visits.length;
+  $('yieldMetric').textContent = state.yielded_nodes.length;
+  $('unresolvedMetric').textContent = state.unresolved.length;
+  $('verified').textContent = state.verified_at ? `Canonical state verified ${new Date(state.verified_at).toLocaleString()}.` : 'No canonical state yet.';
+  $('recovered').value = state.recovered_context || '';
+  $('machine').innerHTML = [
+    ['origin', `1 · ${NODES[1]}`], ['active_claim', state.active_claim?.claim_id || '—'], ['parent_claim', state.parent_claim || '—'],
+    ['current_node', state.current_node ? `${state.current_node} · ${NODES[state.current_node]}` : '—'], ['direct_reference', state.direct_reference || '—'],
+    ['next_node', state.next_node || '—'], ['yielded_nodes', state.yielded_nodes.join(', ') || '—']
+  ].map(([k,v]) => `<div><b>${k}</b>: ${v}</div>`).join('');
+  const sequence = state.visits.concat(state.next_node ? [state.next_node] : []);
+  $('route').innerHTML = sequence.length ? sequence.map((n,i) => `${i ? '<span class="arrow">→</span>' : ''}<span class="node ${i === sequence.length-1 && state.next_node ? 'active' : ''}">${n} · ${NODES[n]}</span>`).join('') : '<span class="empty">No route open.</span>';
+  $('history').innerHTML = state.history.length ? [...state.history].reverse().map(e => `<div class="event"><small>${e.message_id}</small><b>${e.IDENTITY.sender} · ${e.IDENTITY.role_signature}</b><div>${e.CONTROL.state} → ${e.ROUTING.next ?? 'closed'}</div><small>${e.ROUTING.route_reason} · parent ${e.PROVENANCE.parent_message || 'origin'}</small></div>`).join('') : '<div class="empty">No canonical history.</div>';
+}
+
+$('openClaim').onclick = () => { try { state = openClaim(state,{claim:$('claim').value,starter:$('starter').value,fuel:$('fuel').value,parentClaim:$('parentClaim').value}); $('response').value = pretty(responseTemplate(state)); note('validation','Claim opened. Response payload prepared.'); render(); } catch(e){ note('validation',e.message,'bad'); } };
+$('copyEnvelope').onclick = async () => { if(!state.history.length)return; await navigator.clipboard.writeText(pretty(state.history.at(-1))); note('validation','Canonical envelope copied.'); };
+$('copyPayload').onclick = async () => { try { const p=pretty(responseTemplate(state)); $('response').value=p; await navigator.clipboard.writeText(p); note('validation','Exact-bound response payload copied.'); } catch(e){note('validation',e.message,'bad');} };
+$('validate').onclick = () => { try { const r=acceptResponse(state,JSON.parse($('response').value)); if(!r.accepted){note('validation',`${r.status}: ${r.reason}`,'bad');return;} state=r.state; note('validation',`${r.status}: accepted as canonical. Routed to ${r.envelope.ROUTING.next ?? 'closure'} (${r.envelope.ROUTING.route_reason}).`); render(); if(state.active_claim)$('response').value=pretty(responseTemplate(state)); } catch(e){note('validation',e.message,'bad');} };
+$('clearResponse').onclick = () => $('response').value='';
+$('saveContext').onclick = () => {state.recovered_context=$('recovered').value; note('validation','Orientation saved separately; canonical state unchanged.'); render();};
+$('exportState').onclick = () => { const blob=new Blob([pretty(state)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`relay-v0-${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href); };
+$('importState').onchange = async e => { try {state=verifyImport(JSON.parse(await e.target.files[0].text())); note('validation','Imported state verified; parent chain is intact.');render();}catch(err){note('validation',err.message,'bad');}e.target.value='';};
+$('selfTest').onclick = () => {const r=runSelfTest();note('testResult',`${r.pass?'PASS':'FAIL'} · default route ${r.defaultPass?'✓':'✗'} · zigzag/fuel ${r.zigzagPass?'✓':'✗'} · return-to-1 ${r.returnPass?'✓':'✗'} · parent chain ${r.parentPass?'✓':'✗'}`,r.pass?'ok':'bad');};
+render();
+
+</script>
+</main></body></html>

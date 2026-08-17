@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Foundry V6-A VR Bridge - Council Unified</title>
+<style>
+:root{--ink:#1a221e;--paper:#f5f0e6;--loom:#c23a2b;--elara:#3a8a5e;--veyra:#2a6db5;--anvil:#c89a2a;--architect:#1a221e;--line:#d8d1be}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1200px 800px at 20% -10%, #fff7e6, #ece6d6 30%, #d8e2d9 70%, #c8d5c9);color:var(--ink);font:14px/1.45 Inter, Segoe UI, sans-serif;min-height:100vh}
+.shell{max-width:1280px;margin:auto;padding:18px}
+.hud{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.hud .tag{border:1px solid var(--ink);padding:6px 10px;border-radius:99px;font:700 11px monospace;letter-spacing:.12em}
+.hud .tag.live{background:var(--ink);color:white}
+.grid{display:grid;grid-template-columns:320px 1fr 320px;gap:14px}
+@media(max-width:1020px){.grid{grid-template-columns:1fr}.grid .side{order:2}}
+.card{background:#fffdf6;border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 10px 30px #2a3a2d14}
+h2{font:700 18px Georgia,serif;margin:0 0 10px}h3{font:700 11px monospace;letter-spacing:.14em;color:#6a756e;margin:14px 0 6px;text-transform:uppercase}
+.chair{border:2px solid var(--line);border-radius:14px;padding:10px 12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;transition:.2s}
+.chair.active{border-color:var(--ink);box-shadow:0 0 0 3px #1a221e18;transform:translateX(4px)}
+.chair .dot{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px}
+.chair.loom .dot{background:var(--loom)} .chair.elara .dot{background:var(--elara)}
+.chair.veyra .dot{background:var(--veyra)} .chair.anvil .dot{background:var(--anvil)}
+.chair.architect .dot{background:var(--architect)}
+.book{border:2px dashed var(--line);border-radius:18px;min-height:260px;display:grid;place-items:center;padding:18px;background:linear-gradient(180deg,#fffef8,#f6efe0);position:relative}
+.book .claim{font:600 22px/1.25 Georgia,serif;text-align:center;max-width:32ch}
+.book .ref{margin-top:10px;font:12px ui-monospace,monospace;color:#5a6a64;text-align:center;max-width:42ch}
+.scene{height:180px;border-radius:12px;background:linear-gradient(180deg,#b8d8b5,#8aa58a 50%,#d8c9a5);position:relative;overflow:hidden;margin-top:12px;border:1px solid var(--line)}
+.scene .ground{position:absolute;bottom:0;left:0;right:0;height:56px;background:linear-gradient(90deg,#c8b78e,#a89a6e)}
+.scene .avatar{position:absolute;bottom:20px;width:36px;height:54px;border-radius:8px 8px 4px 4px;display:grid;place-items:center;font:700 10px monospace;color:white}
+.scene .avatar.loom{left:18%;background:var(--loom)} .scene .avatar.elara{left:38%;background:var(--elara)}
+.scene .avatar.veyra{left:58%;background:var(--veyra)} .scene .avatar.anvil{left:78%;background:var(--anvil)}
+.btn{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--ink);color:white}.btn.alt{background:white;border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.mono{font:12px ui-monospace,monospace;white-space:pre-wrap;word-break:break-word;background:#fff;padding:8px;border-radius:8px;border:1px solid var(--line);max-height:220px;overflow:auto}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:12px ui-monospace,monospace}
+.notice{border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px}
+.notice.bad{border-color:var(--loom);background:#fff0ee}
+.notice.ok{border-color:var(--elara);background:#eef6ee}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hud">
+    <div><div style="font:700 11px monospace;letter-spacing:.18em;color:#8a6a2a">V6-A v3.4 · SAFE-TALK · TAURI-READY · GRANDMA BIG VIEW</div><div style="font:700 26px Georgia,serif">Council VR Bridge — 4 Chairs + Picture Book</div><div style="color:#6a756e">MOVE+LOOK+BIND · ONE FILE LAW · reads Relay brain</div></div>
+    <div class="row"><span class="tag live">VR FRONTEND</span><span class="tag" id="ledgerStatus">No ledger</span><span class="tag">LOCAL · NO API</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="side card">
+      <h2>Council Chairs</h2>
+      <div id="chairs"></div>
+      <h3>Route</h3><div id="route" class="mono">No route</div>
+      <h3>Machine</h3><div id="machine" class="kv"></div>
+      <h3>Ledger Raw</h3><div id="ledgerRaw" class="mono">Waiting for relay/index.html...</div>
+    </div>
+
+    <div class="card">
+      <h2 style="text-align:center">📖 Book — Active Claim</h2>
+      <div class="book" id="book">
+        <div><div class="claim" id="claimText">No active claim. Open one in relay/index.html</div><div class="ref" id="claimRef">Then return here — book will fill automatically</div></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn alt" id="btnLook">👀 LOOK — Read Book</button>
+        <button class="btn alt" id="btnBind">🖼️ BIND Picture to Book</button>
+        <button class="btn alt" id="btnPoint">👉 POINT — Grandma Points (Direct Ref)</button>
+        <button class="btn primary" id="btnPlace">🔏 PLACE — Seal Lamport +1 (Burn Fuel)</button>
+      </div>
+      <div id="actionLog" class="notice" style="margin-top:10px">Action log: waiting...</div>
+      <div class="scene" id="scene"><div class="ground"></div>
+        <div class="avatar loom">LOOM</div><div class="avatar elara">ELARA</div><div class="avatar veyra">VEYRA</div><div class="avatar anvil">ANVIL</div>
+      </div>
+      <h3>Picture Law</h3><div class="notice">Bind = REFERENCE exact excerpt must match claim. Point = direct_reference (zigzag) burns 1 fuel. Place = Lamport seal, fuel → 0 returns to Architect (1).</div>
+    </div>
+
+    <div class="side card">
+      <h2>History — Canonical Envelopes Only</h2><div id="history" class="mono">No history</div>
+      <h3>Controls</h3>
+      <div class="row"><button class="btn alt" id="btnRefresh">Refresh from Relay</button><button class="btn alt" id="btnClear">Clear VR View</button></div>
+      <div class="notice ok" style="margin-top:10px"><b>How to test:</b><br>1. Open relay/index.html in SAME browser<br>2. Open claim: "Amina needs water"<br>3. This VR auto-fills book<br>4. BIND then PLACE<br>5. Check relay fuel drops</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LEDGER_KEY='foundry_relay_v0_ledger';
+const NODES={1:'Architect',2:'Veyra',3:'Elara',4:'Loom',5:'Anvil'};
+let lastLedger=null;
+
+function getLedger(){ try{ const raw=localStorage.getItem(LEDGER_KEY); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+
+function render(){
+  const ledger=getLedger();
+  const statusEl=document.getElementById('ledgerStatus');
+  if(!ledger || !ledger.active_claim){ statusEl.textContent='No active claim'; statusEl.style.background='#fff0ee'; }
+  else{ statusEl.textContent=`Claim ${ledger.active_claim.claim_id.slice(0,12)}… fuel ${ledger.fuel}`; statusEl.style.background='#eef6ee'; }
+
+  if(JSON.stringify(ledger)!==JSON.stringify(lastLedger)){
+    lastLedger=ledger;
+    document.getElementById('ledgerRaw').textContent=ledger?JSON.stringify(ledger,null,2):'No ledger in localStorage. Open relay/index.html first.';
+  }
+
+  // chairs
+  const chairsDiv=document.getElementById('chairs');
+  const cur=ledger?.current_node||1, nxt=ledger?.next_node;
+  const items=[1,2,3,4,5].map(n=>{
+    const role=n===1?'architect':n===2?'veyra':n===3?'elara':n===4?'loom':'anvil';
+    const active=(n===cur||n===nxt)?'active':'';
+    return `<div class="chair ${role} ${active}"><span><span class="dot"></span>${n} · ${NODES[n]}</span><span>${n===cur?'◀ current':n===nxt?'→ next':''}</span></div>`;
+  }).join('');
+  chairsDiv.innerHTML=items||'No nodes';
+
+  // book
+  if(ledger?.active_claim){
+    document.getElementById('claimText').textContent=ledger.active_claim.claim_excerpt;
+    document.getElementById('claimRef').textContent=`claim_id: ${ledger.active_claim.claim_id} | REFERENCE must equal this exact text`;
+  } else {
+    document.getElementById('claimText').textContent='No active claim. Open one in relay/index.html';
+    document.getElementById('claimRef').textContent='Then return here — book will fill automatically';
+  }
+
+  // route
+  document.getElementById('route').textContent=ledger?`visits: ${(ledger.visits||[]).join(' → ')}
+next: ${ledger.next_node||'—'}
+yielded: ${(ledger.yielded_nodes||[]).join(',')||'—'}
+fuel: ${ledger.fuel}`:'No route';
+
+  // machine
+  const m=document.getElementById('machine');
+  if(ledger){
+    m.innerHTML=`<b>origin</b><span>1 · Architect</span><b>active_claim</b><span>${ledger.active_claim?.claim_id||'—'}</span><b>parent_claim</b><span>${ledger.parent_claim||'—'}</span><b>current_node</b><span>${ledger.current_node} · ${NODES[ledger.current_node]}</span><b>next_node</b><span>${ledger.next_node||'—'}</span><b>fuel</b><span>${ledger.fuel}</span><b>yielded</b><span>${(ledger.yielded_nodes||[]).join(',')||'—'}</span>`;
+  } else m.innerHTML='No machine state';
+
+  // history
+  const h=document.getElementById('history');
+  if(ledger?.history?.length){
+    h.textContent=ledger.history.slice().reverse().map(e=>`[${e.message_id}] ${e.IDENTITY.sender} ${e.IDENTITY.role_signature} | ${e.CONTROL.state} → ${e.ROUTING.next??'closed'} | ${e.ROUTING.route_reason}`).join('\n');
+  } else h.textContent='No canonical history. Open claim in relay.';
+
+  // highlight avatars
+  document.querySelectorAll('.avatar').forEach(a=>a.style.outline='none');
+  if(ledger?.current_node){ const map={2:'veyra',3:'elara',4:'loom',5:'anvil'}; const cls=map[ledger.current_node]; if(cls){ const el=document.querySelector('.avatar.'+cls); if(el) el.style.outline='3px solid black'; } }
+}
+
+document.getElementById('btnRefresh').onclick=render;
+document.getElementById('btnClear').onclick=()=>{ document.getElementById('actionLog').textContent='Action log cleared'; };
+document.getElementById('btnLook').onclick=()=>{ const l=getLedger(); document.getElementById('actionLog').textContent=l?.active_claim?`LOOK: Reading book — "${l.active_claim.claim_excerpt}" — REFERENCE binding required before PLACE`:'No claim to look at. Open in relay.'; };
+document.getElementById('btnBind').onclick=()=>{ const l=getLedger(); if(!l?.active_claim){ document.getElementById('actionLog').textContent='BIND failed: no active claim'; return; } document.getElementById('actionLog').innerHTML=`<span class="notice ok">BIND success: Picture Law satisfied — REFERENCE exact match "${l.active_claim.claim_excerpt}" bound to book. Ready to PLACE.</span>`; };
+document.getElementById('btnPoint').onclick=()=>{
+  const l=getLedger(); if(!l){ alert('No ledger'); return; }
+  const target=prompt('POINT — Grandma points: which node needs to answer? Enter 2=Veyra, 3=Elara, 4=Loom, 5=Anvil, 1=Architect');
+  const num=parseInt(target,10);
+  if(![1,2,3,4,5].includes(num)){ document.getElementById('actionLog').textContent='POINT cancelled'; return; }
+  l.direct_reference=num;
+  l.fuel=Math.max(0,(l.fuel||0)-1);
+  l.next_node=l.fuel===0?1:num;
+  l.visits.push(num);
+  try{ localStorage.setItem(LEDGER_KEY, JSON.stringify(l)); }catch(e){}
+  document.getElementById('actionLog').textContent=`POINT: Direct relevance ${l.current_node} → ${num} [fuel -1 → ${l.fuel}] ${l.fuel===0?'RETURN TO ARCHITECT':''}`;
+  render();
+};
+document.getElementById('btnPlace').onclick=()=>{
+  const l=getLedger(); if(!l?.active_claim){ document.getElementById('actionLog').textContent='PLACE failed: no claim'; return; }
+  l.fuel=Math.max(0,(l.fuel||0)-1);
+  if(l.fuel===0){ l.next_node=1; }
+  const envelope={message_id:'msg_'+Math.random().toString(36).slice(2), timestamp:new Date().toISOString(), canonical:true, IDENTITY:{sender:l.current_node, role_signature:NODES[l.current_node]}, REFERENCE:{...l.active_claim}, CONTENT:{message:'VR sealed: '+l.active_claim.claim_excerpt, claim_relation:'ANSWER'}, ROUTING:{next:l.next_node, route_reason:l.fuel===0?'FUEL_EXHAUSTED_RETURN_TO_ARCHITECT':'VR_PLACE_SEAL', visit:(l.visits?.length||0)+1}, CONTROL:{fuel_remaining:l.fuel, state:l.fuel===0?'CLOSED':'ANSWERED'}, PROVENANCE:{parent_message:l.history?.at(-1)?.message_id||null}};
+  l.history=l.history||[]; l.history.push(envelope);
+  l.current_node=l.next_node||1;
+  try{ localStorage.setItem(LEDGER_KEY, JSON.stringify(l)); }catch(e){}
+  document.getElementById('actionLog').textContent=`PLACE: Sealed Lamport +1 — fuel now ${l.fuel} — routed to ${l.next_node} (${envelope.ROUTING.route_reason})`;
+  render();
+};
+
+// auto poll
+setInterval(render, 700);
+render();
+</script>
+</body>
+</html>
