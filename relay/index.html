@@ -8,7 +8,7 @@
   </style>
 </head>
 <body><main class="shell">
-  <header class="mast"><div><div class="eyebrow">MANUAL TRANSPORT · CANONICAL ROUTING</div><h1>Foundry Council Relay v0</h1><div class="sub">A separate local harness for exact references, deterministic routing, fuel-bound zigzags, and causal provenance.</div></div><div class="badge">LOCAL · NO PROVIDERS</div></header>
+  <header class="mast"><div><div class="eyebrow">MANUAL TRANSPORT · CANONICAL ROUTING</div><h1>Foundry Council Relay v0</h1><div class="sub">A separate local harness for exact references, deterministic routing, fuel-bound zigzags, and causal provenance.</div></div><div class="badge" style="border-color: var(--gold);">AUTO · API READY</div></header>
   <section class="grid" style="margin-bottom:8px">
     <div class="card" style="grid-column:1/-1; display:flex; gap:10px; align-items:center">
       <b>UNIFIED MODE:</b> <span>This relay auto-syncs to localStorage <code>foundry_relay_v0_ledger</code> so your V6-A VR can read it. Open vr/index.html in same browser.</span>
@@ -22,7 +22,7 @@
       <section class="card"><h2>Portable State</h2><div class="row"><button class="btn alt" id="exportState">Export JSON</button><label class="btn alt" style="text-align:center;cursor:pointer">Import JSON<input id="importState" type="file" accept="application/json" hidden></label></div><button class="btn alt" id="selfTest" style="width:100%;margin-top:8px">Run routing self-test</button><div id="testResult"></div></section>
     </div>
     <div class="col">
-      <section class="card"><h2>Active Relay</h2><h3>Current canonical envelope</h3><div id="current" class="envelope">No active envelope.</div><div class="row" style="margin-top:9px"><button class="btn alt" id="copyEnvelope">Copy envelope</button><button class="btn alt" id="copyPayload">Copy response payload</button></div><h3>Paste response</h3><textarea id="response" style="min-height:250px" placeholder="Copy the response payload, complete it, then paste JSON here."></textarea><div class="row" style="margin-top:9px"><button class="btn" id="validate">Validate & route</button><button class="btn warn" id="clearResponse">Clear</button></div><div id="validation"></div></section>
+      <section class="card"><h2>Active Relay</h2><h3>Current canonical envelope</h3><div id="current" class="envelope">No active envelope.</div><div class="row" style="margin-top:9px"><button class="btn alt" id="copyEnvelope">Copy envelope</button><button class="btn alt" id="copyPayload">Copy response payload</button><button class="btn" id="autoRoute">🤖 Auto Route →</button></div><h3>Paste response</h3><textarea id="response" style="min-height:250px" placeholder="Copy the response payload, complete it, then paste JSON here."></textarea><div class="row" style="margin-top:9px"><button class="btn" id="validate">Validate & route</button><button class="btn warn" id="clearResponse">Clear</button></div><div id="validation"></div></section>
     </div>
     <div class="col">
       <section class="card"><h2>Route State</h2><div id="route" class="route"></div><div class="metrics" style="margin-top:13px"><div class="metric"><b id="fuelMetric">0</b><span>fuel remaining</span></div><div class="metric"><b id="visitMetric">0</b><span>canonical visits</span></div><div class="metric"><b id="yieldMetric">0</b><span>yielded nodes</span></div><div class="metric"><b id="unresolvedMetric">0</b><span>unresolved claims</span></div></div><h3>Machine state</h3><div id="machine" class="mono"></div></section>
@@ -236,7 +236,36 @@ function render() { syncLedger();
   $('history').innerHTML = state.history.length ? [...state.history].reverse().map(e => `<div class="event"><small>${e.message_id}</small><b>${e.IDENTITY.sender} · ${e.IDENTITY.role_signature}</b><div>${e.CONTROL.state} → ${e.ROUTING.next ?? 'closed'}</div><small>${e.ROUTING.route_reason} · parent ${e.PROVENANCE.parent_message || 'origin'}</small></div>`).join('') : '<div class="empty">No canonical history.</div>';
 }
 
-$('openClaim').onclick = () => { try { state = openClaim(state,{claim:$('claim').value,starter:$('starter').value,fuel:$('fuel').value,parentClaim:$('parentClaim').value}); $('response').value = pretty(responseTemplate(state)); note('validation','Claim opened. Response payload prepared.'); render(); } catch(e){ note('validation',e.message,'bad'); } };
+$('openClaim').onclick = () => { try { state = openClaim(state,{claim:$('claim').value,starter:$('starter').value,fuel:$('fuel').value,parentClaim:$('parentClaim').value}); $('response').value = pretty(responseTemplate(state)); note('validation','Claim opened. Response payload prepared.'); 
+$('autoRoute').onclick = async () => {
+  try {
+    if(!state.history.length){ note('validation','Open a claim first','bad'); return; }
+    note('validation','Calling /.netlify/functions/route…');
+    const template = responseTemplate(state);
+    const res = await fetch('/.netlify/functions/route', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ envelope: state.history.at(-1), template, state })
+    });
+    if(!res.ok){
+      const txt = await res.text();
+      throw new Error(`Route function ${res.status}: ${txt.slice(0,400)}`);
+    }
+    const aiResponse = await res.json();
+    $('response').value = JSON.stringify(aiResponse, null, 2);
+    // auto-validate
+    const r = acceptResponse(state, aiResponse);
+    if(!r.accepted){ note('validation', `${r.status}: ${r.reason}`, 'bad'); return; }
+    state = r.state;
+    note('validation', `${r.status}: AI ${aiResponse.IDENTITY?.sender || ''} accepted. Routed to ${r.envelope.ROUTING.next ?? 'closure'} (${r.envelope.ROUTING.route_reason}). Fuel ${state.fuel}`);
+    render();
+    if(state.active_claim) $('response').value = JSON.stringify(responseTemplate(state), null, 2);
+  } catch(e){
+    note('validation', e.message, 'bad');
+  }
+};
+
+render(); } catch(e){ note('validation',e.message,'bad'); } };
 $('copyEnvelope').onclick = async () => { if(!state.history.length)return; await navigator.clipboard.writeText(pretty(state.history.at(-1))); note('validation','Canonical envelope copied.'); };
 $('copyPayload').onclick = async () => { try { const p=pretty(responseTemplate(state)); $('response').value=p; await navigator.clipboard.writeText(p); note('validation','Exact-bound response payload copied.'); } catch(e){note('validation',e.message,'bad');} };
 $('validate').onclick = () => { try { const r=acceptResponse(state,JSON.parse($('response').value)); if(!r.accepted){note('validation',`${r.status}: ${r.reason}`,'bad');return;} state=r.state; note('validation',`${r.status}: accepted as canonical. Routed to ${r.envelope.ROUTING.next ?? 'closure'} (${r.envelope.ROUTING.route_reason}).`); render(); if(state.active_claim)$('response').value=pretty(responseTemplate(state)); } catch(e){note('validation',e.message,'bad');} };
