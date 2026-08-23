@@ -167,12 +167,49 @@ addLibrarySegment(shellRightTexture,11,-19.5,-Math.PI/8);
 addLibrarySegment(shellRightTexture,18,-15.0,-Math.PI/4);
 addLibrarySegment(shellLeftTexture,22,-7.0,-Math.PI/2.4);
 
-// Narrow dark piers disguise the two transitions adjacent to the primary vista.
-const shellSeamMaterial=new THREE.MeshStandardMaterial({color:0x0a1210,roughness:1});
-for(const x of [-9.5,9.5]){
-  const seam=new THREE.Mesh(new THREE.BoxGeometry(0.5,15,0.5),shellSeamMaterial);
-  seam.position.set(x,6.5,-19.5);scene.add(seam);
+// ===== BATCH 3D: GOTHIC PILLARS + CORNICE — environment only =====
+// Full-height backing piers hide panel edges from oblique viewpoints; sculpted shafts make them architectural.
+const pillarStone=new THREE.MeshStandardMaterial({color:0x2a3530,roughness:0.92,metalness:0.03});
+const pillarDark=new THREE.MeshStandardMaterial({color:0x18211e,roughness:1});
+const pillarCapital=new THREE.MeshStandardMaterial({color:0x35413c,roughness:0.82});
+const pillarGlow=new THREE.MeshStandardMaterial({color:0x5a3b20,emissive:0xffaa55,emissiveIntensity:0.42,roughness:0.7});
+
+function addGothicPillar(x,z,rotation){
+  const group=new THREE.Group();group.position.set(x,-0.59,z);group.rotation.y=rotation;scene.add(group);
+  // Structural backing masks the seam for the full panel height.
+  const pier=new THREE.Mesh(new THREE.BoxGeometry(1.25,14.2,0.9),pillarDark);pier.position.y=7.1;group.add(pier);
+  const plinth=new THREE.Mesh(new THREE.BoxGeometry(1.65,0.34,1.5),pillarStone);plinth.position.y=0.17;group.add(plinth);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(0.66,0.76,0.62,12),pillarStone);base.position.y=0.65;group.add(base);
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.43,12.5,12),pillarStone);shaft.position.y=6.95;group.add(shaft);
+  // Four narrow buttress ribs produce a Gothic profile without a heavy model.
+  for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+    const rib=new THREE.Mesh(new THREE.BoxGeometry(0.16,12.3,0.20),pillarCapital);
+    rib.position.set(Math.sin(angle)*0.40,6.95,Math.cos(angle)*0.40);rib.rotation.y=angle;group.add(rib);
+  }
+  const capital=new THREE.Mesh(new THREE.CylinderGeometry(0.66,0.43,0.52,12),pillarCapital);capital.position.y=13.35;group.add(capital);
+  const crown=new THREE.Mesh(new THREE.BoxGeometry(1.38,0.28,1.18),pillarStone);crown.position.y=13.72;group.add(crown);
+  const baseBand=new THREE.Mesh(new THREE.TorusGeometry(0.70,0.055,6,20),pillarGlow);baseBand.rotation.x=Math.PI/2;baseBand.position.y=0.96;group.add(baseBand);
+  const capBand=new THREE.Mesh(new THREE.TorusGeometry(0.62,0.05,6,20),pillarGlow);capBand.rotation.x=Math.PI/2;capBand.position.y=13.05;group.add(capBand);
 }
+[
+  [-6.2,-20.8,0.15],[6.2,-20.8,-0.15],
+  [-14.8,-18.2,0.40],[14.8,-18.2,-0.40],
+  [-20.8,-11.8,0.80],[20.8,-11.8,-0.80]
+].forEach(p=>addGothicPillar(...p));
+
+// Continuous segmented cornice makes the transition into the dark dome intentional.
+const corniceMaterial=new THREE.MeshStandardMaterial({color:0x121a17,roughness:0.94});
+const corniceCenter=new THREE.Mesh(new THREE.BoxGeometry(29,0.72,0.9),corniceMaterial);corniceCenter.position.set(0,13.62,-21.55);scene.add(corniceCenter);
+[
+  [-11,-19.5,Math.PI/8],[-18,-15,Math.PI/4],[-22,-7,Math.PI/2.4],
+  [11,-19.5,-Math.PI/8],[18,-15,-Math.PI/4],[22,-7,-Math.PI/2.4]
+].forEach(([x,z,rotation])=>{
+  const beam=new THREE.Mesh(new THREE.BoxGeometry(17,0.64,0.78),corniceMaterial);
+  beam.position.set(x,13.25,z);beam.rotation.y=rotation;scene.add(beam);
+});
+// Two shared lights keep the warm structure legible without twelve costly dynamic lights.
+const pillarWarmLeft=new THREE.PointLight(0xffaa55,0.72,11,2);pillarWarmLeft.position.set(-13,6,-16);scene.add(pillarWarmLeft);
+const pillarWarmRight=new THREE.PointLight(0xffaa55,0.72,11,2);pillarWarmRight.position.set(13,6,-16);scene.add(pillarWarmRight);
 
 // Neutral rear enclosure remains quiet and leaves room for future physical entrances.
 const shellRearMaterial=new THREE.MeshStandardMaterial({color:0x25302c,roughness:0.92,metalness:0.02});
