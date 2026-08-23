@@ -303,7 +303,16 @@ function selectFromController(controller){
   ray.set(xrOrigin,xrDirection);
   if(wristVisible&&ray.intersectObject(wristMesh,true).length){document.getElementById('wristAutoBtn').click();return;}
   const hits=ray.intersectObjects([leftPage,rightPage,spine],true);
-  if(hits.length){document.getElementById('txt').focus();log('VR trigger focused book - choose an action deliberately','YOU:10');}
+  if(hits.length){
+    bookGroup.userData.xrSelected=true;
+    if(ren.xr.isPresenting){
+      drawWrist('BOOK SELECTED - EDIT IN FLAT'); wristTex.needsUpdate=true;
+      log('Book selected safely in VR - text editing deferred to flat mode','YOU:10');
+      return;
+    }
+    document.getElementById('txt').focus();
+    log('Book focused - edit text then PLACE','YOU:10');
+  }
 }
 controller1.addEventListener('selectstart',()=>selectFromController(controller1));
 controller2.addEventListener('selectstart',()=>selectFromController(controller2));
@@ -372,6 +381,17 @@ document.getElementById('wristAutoBtn').onclick=()=>{
   setTimeout(()=>{ window.prompt=realPrompt; },1000);
 };
 document.getElementById('enterVRInfo').onclick=()=>{ alert('To enter real VR:\n1. Deploy this file to Netlify HTTPS\n2. Open in Quest Browser\n3. Click ENTER VR button bottom-right\n4. Use left controller wrist panel - pinch POINT 2 and PLACE\n5. Relay file must be on SAME domain for ledger sync'); };
+
+
+// XR session lifecycle: keep desktop overlay out of the headset and restore it on exit.
+ren.xr.addEventListener('sessionstart',()=>{
+  document.getElementById('wristDom').style.display='none';
+  wristVisible=false; wristGroup.visible=false;
+});
+ren.xr.addEventListener('sessionend',()=>{
+  document.getElementById('wristDom').style.display='block';
+  wristVisible=false; wristGroup.visible=false;
+});
 
 // Controller triggers now ray-select; POINT 2 / PLACE only fires when the visible wrist button is deliberately selected.
 
