@@ -134,72 +134,70 @@ const dl=new THREE.DirectionalLight(0xb9dfff,0.75);dl.position.set(-4,9,5);dl.ca
 const fireLight=new THREE.PointLight(0xff7b28,4.2,13,2);fireLight.position.set(0,2.0,-6.0);fireLight.castShadow=true;scene.add(fireLight);
 const magicLight=new THREE.PointLight(0x20d8ff,2.6,10,2);magicLight.position.set(0,1.3,0);scene.add(magicLight);
 
-// ===== BATCH 3A: CHAMBER ENVELOPE ONLY — interaction systems remain frozen =====
-// The perspective artwork stays a distant architectural horizon; physical council positions are unchanged.
-scene.fog=new THREE.FogExp2(0x121e19,0.013);
-dl.intensity=0.62;
-fireLight.intensity=6.5;fireLight.distance=20;
-const shellFillLight=new THREE.PointLight(0x61776d,1.15,32);shellFillLight.position.set(0,6,1);scene.add(shellFillLight);
+// ===== BATCH 3C: REFINED SEVEN-SEGMENT LIBRARY ENVELOPE — controls frozen =====
+scene.fog=new THREE.FogExp2(0x121e19,0.011);
+dl.intensity=0.60;fireLight.intensity=6.5;fireLight.distance=20;
+const shellFillLight=new THREE.PointLight(0x61776d,1.15,34);shellFillLight.position.set(0,6,1);scene.add(shellFillLight);
 
 const shellLoader=new THREE.TextureLoader();
-const shellTexture=shellLoader.load('/assets/lazarus_library_council.webp');
-shellTexture.colorSpace=THREE.SRGBColorSpace;shellTexture.wrapS=shellTexture.wrapT=THREE.ClampToEdgeWrapping;
-
-// Forward wall: farther and taller so the council occupies the room rather than standing before a screen.
-const shellFrontTexture=shellTexture.clone();shellFrontTexture.needsUpdate=true;
-const shellFront=new THREE.Mesh(new THREE.PlaneGeometry(26,14),new THREE.MeshBasicMaterial({map:shellFrontTexture,color:0xd8e4e8,side:THREE.DoubleSide}));
-shellFront.position.set(0,6.2,-20);scene.add(shellFront);
-
-// Cropped side wings overlap the forward wall; DoubleSide prevents headset-angle backface loss.
-function makeShellWing(offset,x,rotation){
-  const tex=shellTexture.clone();tex.needsUpdate=true;tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
-  tex.repeat.set(0.39,1);tex.offset.set(offset,0);tex.colorSpace=THREE.SRGBColorSpace;
-  const wing=new THREE.Mesh(new THREE.PlaneGeometry(20,13),new THREE.MeshBasicMaterial({map:tex,color:0xcbd9dd,side:THREE.DoubleSide}));
-  wing.position.set(x,5.8,-14);wing.rotation.y=rotation;scene.add(wing);
+function loadShellTexture(path){
+  const texture=shellLoader.load(path);texture.colorSpace=THREE.SRGBColorSpace;
+  texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;return texture;
 }
-makeShellWing(0.00,-17, THREE.MathUtils.degToRad(67));
-makeShellWing(0.61, 17,-THREE.MathUtils.degToRad(67));
+const shellMainTexture=loadShellTexture('/assets/lazarus_library_council.webp');
+const shellLeftTexture=loadShellTexture('/assets/image.png');
+const shellRightTexture=loadShellTexture('/assets/side_right_arches.webp');
 
-// Dark seam piers sit in the overlap and make the corners read as architecture.
-const shellSeamMaterial=new THREE.MeshStandardMaterial({color:0x0e1612,roughness:1});
-const shellLeftSeam=new THREE.Mesh(new THREE.BoxGeometry(0.6,14.5,0.6),shellSeamMaterial);
-shellLeftSeam.position.set(-11.2,6.2,-17.2);shellLeftSeam.rotation.y=Math.PI/6;scene.add(shellLeftSeam);
-const shellRightSeam=shellLeftSeam.clone();shellRightSeam.position.x=11.2;shellRightSeam.rotation.y=-Math.PI/6;scene.add(shellRightSeam);
+// One untouched primary Library vista behind the Council.
+const shellCenter=new THREE.Mesh(new THREE.PlaneGeometry(28,15),new THREE.MeshBasicMaterial({map:shellMainTexture,color:0xd8e4e8,side:THREE.DoubleSide}));
+shellCenter.position.set(0,6.5,-22);scene.add(shellCenter);
 
-// Neutral rear enclosure and future-room marker.
+function addLibrarySegment(texture,x,z,rotation,width=16,height=13){
+  const segment=new THREE.Mesh(new THREE.PlaneGeometry(width,height),new THREE.MeshBasicMaterial({map:texture,color:0xd1d9d8,side:THREE.DoubleSide}));
+  segment.position.set(x,6.2,z);segment.rotation.y=rotation;scene.add(segment);
+  // Dark overlay feathers the architectural image into the ceiling rather than ending abruptly.
+  const cap=new THREE.Mesh(new THREE.PlaneGeometry(width*0.96,2.5),new THREE.MeshBasicMaterial({color:0x060c0a,transparent:true,opacity:0.55,side:THREE.DoubleSide,depthWrite:false}));
+  cap.position.set(0,height/2-1.25,0.035);segment.add(cap);
+}
+// Three clean architectural segments on each side, overlapping gently around the chamber.
+addLibrarySegment(shellLeftTexture,-11,-19.5, Math.PI/8);
+addLibrarySegment(shellLeftTexture,-18,-15.0, Math.PI/4);
+addLibrarySegment(shellRightTexture,-22,-7.0, Math.PI/2.4);
+addLibrarySegment(shellRightTexture,11,-19.5,-Math.PI/8);
+addLibrarySegment(shellRightTexture,18,-15.0,-Math.PI/4);
+addLibrarySegment(shellLeftTexture,22,-7.0,-Math.PI/2.4);
+
+// Narrow dark piers disguise the two transitions adjacent to the primary vista.
+const shellSeamMaterial=new THREE.MeshStandardMaterial({color:0x0a1210,roughness:1});
+for(const x of [-9.5,9.5]){
+  const seam=new THREE.Mesh(new THREE.BoxGeometry(0.5,15,0.5),shellSeamMaterial);
+  seam.position.set(x,6.5,-19.5);scene.add(seam);
+}
+
+// Neutral rear enclosure remains quiet and leaves room for future physical entrances.
 const shellRearMaterial=new THREE.MeshStandardMaterial({color:0x25302c,roughness:0.92,metalness:0.02});
-const shellRearWall=new THREE.Mesh(new THREE.BoxGeometry(32,12,0.8),shellRearMaterial);shellRearWall.position.set(0,5.2,16);scene.add(shellRearWall);
-const shellRearLeft=new THREE.Mesh(new THREE.BoxGeometry(0.55,12,21),shellRearMaterial);shellRearLeft.position.set(-15.7,5.2,5.8);scene.add(shellRearLeft);
-const shellRearRight=shellRearLeft.clone();shellRearRight.position.x=15.7;scene.add(shellRearRight);
+const shellRearWall=new THREE.Mesh(new THREE.BoxGeometry(34,12,0.8),shellRearMaterial);shellRearWall.position.set(0,5.2,16.5);scene.add(shellRearWall);
+const shellRearLeft=new THREE.Mesh(new THREE.BoxGeometry(0.55,12,22),shellRearMaterial);shellRearLeft.position.set(-16.7,5.2,5.8);scene.add(shellRearLeft);
+const shellRearRight=shellRearLeft.clone();shellRearRight.position.x=16.7;scene.add(shellRearRight);
 const rearArchMat=new THREE.MeshStandardMaterial({color:0x111a1b,roughness:1});
-const shellRearDoor=new THREE.Mesh(new THREE.PlaneGeometry(5.2,7.0),rearArchMat);shellRearDoor.position.set(0,2.5,15.55);shellRearDoor.rotation.y=Math.PI;scene.add(shellRearDoor);
-const shellRearArch=new THREE.Mesh(new THREE.TorusGeometry(2.6,0.25,10,32,Math.PI),new THREE.MeshStandardMaterial({color:0x50605a,roughness:0.9}));
-shellRearArch.position.set(0,6.0,15.4);shellRearArch.rotation.z=Math.PI;scene.add(shellRearArch);
+const shellRearDoor=new THREE.Mesh(new THREE.PlaneGeometry(5.2,7.0),rearArchMat);shellRearDoor.position.set(0,2.5,16.05);shellRearDoor.rotation.y=Math.PI;scene.add(shellRearDoor);
 
-// Irregular stone paving: lighter stones, dark grout and low repetition remain legible in Quest.
+// Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
 const shellStoneColors=['#3a4a44','#4a5a54','#2f3d38','#42524c','#35443e'];
 for(let i=0;i<180;i++){
   const x=Math.random()*1024,y=Math.random()*1024,r=30+Math.random()*55,sides=5+Math.floor(Math.random()*3);
-  shellFloorCtx.fillStyle=shellStoneColors[Math.floor(Math.random()*shellStoneColors.length)];
-  shellFloorCtx.beginPath();
-  for(let s=0;s<sides;s++){
-    const angle=(s/sides)*Math.PI*2+Math.random()*0.3,rad=r*(0.7+Math.random()*0.6);
-    const px=x+Math.cos(angle)*rad,py=y+Math.sin(angle)*rad;
-    if(s===0)shellFloorCtx.moveTo(px,py);else shellFloorCtx.lineTo(px,py);
-  }
+  shellFloorCtx.fillStyle=shellStoneColors[Math.floor(Math.random()*shellStoneColors.length)];shellFloorCtx.beginPath();
+  for(let s=0;s<sides;s++){const angle=(s/sides)*Math.PI*2+Math.random()*0.3,rad=r*(0.7+Math.random()*0.6),px=x+Math.cos(angle)*rad,py=y+Math.sin(angle)*rad;if(s===0)shellFloorCtx.moveTo(px,py);else shellFloorCtx.lineTo(px,py);}
   shellFloorCtx.closePath();shellFloorCtx.fill();shellFloorCtx.strokeStyle='#101815';shellFloorCtx.lineWidth=4;shellFloorCtx.stroke();
 }
-shellFloorCtx.fillStyle='rgba(220,230,220,0.075)';
-for(let i=0;i<400;i++)shellFloorCtx.fillRect(Math.random()*1024,Math.random()*1024,2,2);
-const shellFloorTexture=new THREE.CanvasTexture(shellFloorCanvas);shellFloorTexture.wrapS=shellFloorTexture.wrapT=THREE.RepeatWrapping;
-shellFloorTexture.repeat.set(4,4);shellFloorTexture.colorSpace=THREE.SRGBColorSpace;
+shellFloorCtx.fillStyle='rgba(220,230,220,0.075)';for(let i=0;i<400;i++)shellFloorCtx.fillRect(Math.random()*1024,Math.random()*1024,2,2);
+const shellFloorTexture=new THREE.CanvasTexture(shellFloorCanvas);shellFloorTexture.wrapS=shellFloorTexture.wrapT=THREE.RepeatWrapping;shellFloorTexture.repeat.set(4,4);shellFloorTexture.colorSpace=THREE.SRGBColorSpace;
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(110,110),new THREE.MeshStandardMaterial({map:shellFloorTexture,color:0xffffff,roughness:0.82,metalness:0.04}));
 floor.rotation.x=-Math.PI/2;floor.position.y=-0.59;floor.receiveShadow=false;scene.add(floor);
 
-// Larger, higher dark dome closes the room with two lightweight geometry draw calls total for shell ceiling/rear.
-const ceiling=new THREE.Mesh(new THREE.SphereGeometry(45,28,14,0,Math.PI*2,0,Math.PI/2.4),new THREE.MeshBasicMaterial({color:0x08100d,side:THREE.BackSide,transparent:true,opacity:0.94}));
+const ceiling=new THREE.Mesh(new THREE.SphereGeometry(48,28,14,0,Math.PI*2,0,Math.PI/2.3),new THREE.MeshBasicMaterial({color:0x060c0a,side:THREE.BackSide,transparent:true,opacity:0.94}));
 ceiling.position.y=0;scene.add(ceiling);
 
 // Central raised work dais and luminous inlay.
@@ -219,7 +217,7 @@ const flames=[];for(let i=0;i<7;i++){const flame=new THREE.Mesh(new THREE.ConeGe
 
 // Non-interactive future door/room silhouettes around the chamber.
 const archMat=new THREE.MeshStandardMaterial({color:0x111820,emissive:0x07324a,emissiveIntensity:0.45,roughness:0.75});
-for(const a of [-2.25,-1.5,-0.75,0.75,1.5,2.25]){const arch=new THREE.Group();const rr=9.1;arch.position.set(Math.sin(a)*rr,-0.55,Math.cos(a)*rr);arch.lookAt(0,1.2,0);const door=new THREE.Mesh(new THREE.PlaneGeometry(1.55,3.4),archMat);door.position.y=1.7;arch.add(door);const halo=new THREE.Mesh(new THREE.TorusGeometry(0.94,0.08,8,24,Math.PI),new THREE.MeshBasicMaterial({color:0x2dc9ed}));halo.position.y=3.05;arch.add(halo);scene.add(arch);}
+for(const a of [-2.25,-1.5,-0.75,0.75,1.5,2.25]){const arch=new THREE.Group();const rr=9.1;arch.position.set(Math.sin(a)*rr,-0.55,Math.cos(a)*rr);arch.lookAt(0,1.2,0);const door=new THREE.Mesh(new THREE.PlaneGeometry(1.55,3.4),archMat);door.position.y=1.7;arch.add(door);const halo=new THREE.Mesh(new THREE.TorusGeometry(0.94,0.08,8,24,Math.PI),new THREE.MeshBasicMaterial({color:0x2dc9ed,transparent:true,opacity:0.12}));halo.position.y=3.05;arch.add(halo);scene.add(arch);}
 // book group center
 const bookGroup=new THREE.Group();bookGroup.position.y=0.58;bookGroup.scale.setScalar(1.2);scene.add(bookGroup);
 const matL=new THREE.MeshStandardMaterial({color:0xffffee,emissive:0x000000});const matR=new THREE.MeshStandardMaterial({color:0xffffee,emissive:0x000000});
