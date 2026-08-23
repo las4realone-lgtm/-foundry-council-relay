@@ -9,7 +9,7 @@ She wrote book, Elara built game, you built VR and connection, Anvil math, Claud
 <meta name="tauri" content="local-only">
 <meta name="foundry-law" content="offline-only no-fetch no-http active-not-connected">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Foundry V6-A v3.4 SAFE-TALK GRANDMA BIG VIEW TURN-BY-TURN 1-2-3-4-5-6-1 - Full Council 4 Chairs + Picture Book - One File Law</title>
+<title>Lazarus Library — Council Chamber VR</title>
 <style>
 
 #bigView{position:fixed;inset:0;z-index:100;display:none;background:#000e;backdrop-filter:none;flex-direction:column;align-items:center;justify-content:center;padding:20px}
@@ -18,18 +18,18 @@ She wrote book, Elara built game, you built VR and connection, Anvil math, Claud
 #bigView .bigTxt{margin-top:12px;background:#101a10;border:1px solid #5a7a3a;padding:12px 18px;border-radius:10px;color:#aaff66;font-size:18px;max-width:80vw;text-align:center}
 #bigView .close{position:absolute;top:14px;right:18px;background:#ffaa33;color:#000;border:none;padding:8px 14px;border-radius:8px;font-weight:bold;cursor:pointer}
 
-*{box-sizing:border-box}body{margin:0;background:#060a0d;color:#e8dcc0;font-family:ui-monospace,Menlo,monospace}
-#header{position:sticky;top:0;z-index:30;background:#101d12f2;border-bottom:1px solid #3a5a2a;padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.badge{border:1px solid #5a7a3a;background:#15210f;padding:4px 8px;border-radius:6px;font-size:11px;color:#aaff66;cursor:pointer}
+*{box-sizing:border-box}body{margin:0;background:#04070d;color:#e8dcc0;font-family:ui-monospace,Menlo,monospace}
+#header{position:sticky;top:0;z-index:30;background:#07111df2;border-bottom:1px solid #1d6170;padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{border:1px solid #296c79;background:#0b1b23;padding:4px 8px;border-radius:6px;font-size:11px;color:#82ecff;cursor:pointer}
 .badge.on{background:#ffaa33;color:#000;border-color:#ffaa33}
 #main{display:grid;grid-template-columns:1.4fr 0.6fr;gap:8px;padding:8px;height:calc(100vh - 48px)}
-#vr{border:1px solid #3a4a2a;border-radius:10px;background:#0a120a;position:relative;overflow:hidden;display:flex;flex-direction:column}
+#vr{border:1px solid #285465;border-radius:10px;background:#050a10;position:relative;overflow:hidden;display:flex;flex-direction:column}
 #canvasWrap{flex:1;min-height:380px;cursor:grab}
 #controls{padding:6px 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#101a10;border-top:1px solid #223322}
 .btn{padding:6px 10px;border-radius:8px;border:1px solid #ffaa33;background:#2a1e0a;color:#ffcc66;cursor:pointer;font-weight:bold;font-size:12px}
 .btn.big{background:#ffaa33;color:#000}
 input[type=text]{padding:6px;border-radius:6px;border:1px solid #444;background:#111;color:#eee;min-width:200px;font-size:12px}
-#help{font-size:9px;color:#8fbb66;padding:2px 8px;background:#0e1a0e}
+#help{font-size:9px;color:#80dcec;padding:2px 8px;background:#07131b}
 #log{font-size:10px;color:#aaff66;padding:6px;max-height:120px;overflow:auto;border-top:1px solid #222;background:#0a0e0a}
 #vault{border:1px solid #3a4a2a;border-radius:10px;background:#0e1410;padding:8px;overflow:auto}
 .entry{border:1px solid #2a3a1a;border-radius:8px;padding:6px;background:#121e0f;margin-bottom:6px}
@@ -46,7 +46,7 @@ input[type=text]{padding:6px;border-radius:6px;border:1px solid #444;background:
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 </head><body>
 <div id="header">
-<span style="color:#ffcc66;font-weight:bold">V6-A v3.4 SAFE-TALK V3.4 SAFE-TALK TAURI-READY GRANDMA BIG VIEW TURN 1-2-3-4-5-6-1 • <span id="turnBadge" style="background:#ffaa00;color:#000;padding:2px 6px;border-radius:4px;">TURN: VEYRA (2)</span> • FULL COUNCIL 4 CHAIRS + PICTURE BOOK • MOVE+LOOK+ BIND — ONE FILE LAW</span>
+<span style="color:#ffcc66;font-weight:bold">LAZARUS LIBRARY • COUNCIL CHAMBER VR • <span id="turnBadge" style="background:#ffaa00;color:#000;padding:2px 6px;border-radius:4px;">TURN: VEYRA (2)</span> • FOUR COUNCIL SEATS • POINT → FOCUS → ACT</span>
 <span class="badge on" id="sync">AUTO-SYNC: ON • IndexedDB</span>
 <span class="badge" id="bForest">🌲 FOREST</span>
 <span class="badge" id="bJerry">🪣 JERRYCAN - Amina</span>
@@ -72,7 +72,7 @@ input[type=text]{padding:6px;border-radius:6px;border:1px solid #444;background:
 <div id="main">
 <div id="vr">
 <div id="canvasWrap"></div>
-<div id="help">HOLD LEFT MOUSE drag to look • SCROLL zoom • WASD move • 4 CHAIRS: Loom(red) Elara(green) Veyra(blue) Anvil(gold) • BOOK middle glows when picture bound • DBL-CLICK lock • ESC free</div>
+<div id="help">HOLD LEFT MOUSE drag to look • SCROLL zoom • WASD move • FOUR SEATS: Veyra, Anvil, Elara, Loom • CONTROLLER RAY / CLICK book to focus • future arches are visual only</div>
 <div id="controls">
 <button class="btn big" id="bindBtn">📖 BIND PICTURE TO BOOK</button>
 <input type="text" id="txt" value="Amina needs water - V6-A v3 full council">
@@ -94,9 +94,9 @@ import {XRControllerModelFactory} from 'three/addons/webxr/XRControllerModelFact
 
 let selectedImage=null,boundImage=null;
 const thumbs={forest:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=60', jerry:'https://images.unsplash.com/photo-1596003906949-67221c37965c?w=400&q=60', desert:'https://images.unsplash.com/photo-1683009427513-28e1638a292a?w=400&q=60'};
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1210);
-const cam=new THREE.PerspectiveCamera(65,1,0.1,100);cam.position.set(0,2.1,2.9);
-const ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(800,440);ren.xr.enabled=true;document.getElementById('canvasWrap').appendChild(ren.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x030710);scene.fog=new THREE.FogExp2(0x07101a,0.016);
+const cam=new THREE.PerspectiveCamera(65,1,0.1,120);cam.position.set(0,3.4,8.6);
+const ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(800,440);ren.xr.enabled=true;ren.outputColorSpace=THREE.SRGBColorSpace;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.05;ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;document.getElementById('canvasWrap').appendChild(ren.domElement);
 // VR BUTTON - FIX FOR HEADSET
 document.getElementById('vrBtnContainer').appendChild(VRButton.createButton(ren));
 // Controllers + wrist panel for VR
@@ -106,10 +106,9 @@ const controllerModelFactory=new XRControllerModelFactory();
 const grip1=ren.xr.getControllerGrip(0); grip1.add(controllerModelFactory.createControllerModel(grip1)); scene.add(grip1);
 const grip2=ren.xr.getControllerGrip(1); grip2.add(controllerModelFactory.createControllerModel(grip2)); scene.add(grip2);
 // Simple ray lines for pointing
-const rayGeom=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
-const rayMat=new THREE.LineBasicMaterial({color:0x00d0ff});
-const ray1=new THREE.Line(rayGeom, rayMat); ray1.name='ray'; ray1.scale.z=5; controller1.add(ray1);
-const ray2=new THREE.Line(rayGeom.clone(), rayMat.clone()); ray2.name='ray'; ray2.scale.z=5; controller2.add(ray2);
+const geom=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
+const line1=new THREE.Line(geom, new THREE.LineBasicMaterial({color:0x00d0ff})); line1.name='line'; line1.scale.z=5; controller1.add(line1.clone());
+const line2=new THREE.Line(geom, new THREE.LineBasicMaterial({color:0x00d0ff})); line2.name='line'; line2.scale.z=5; controller2.add(line2.clone());
 // Wrist UI attached to left controller
 const wristGroup=new THREE.Group(); 
 const wristCanvas=document.createElement('canvas'); wristCanvas.width=512; wristCanvas.height=256;
@@ -125,15 +124,46 @@ controller2.add(wristGroup);
 // Relay sync check
 function getRelay(){ try{ const raw=localStorage.getItem('foundry_relay_v0_ledger'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 
-const controls=new OrbitControls(cam, ren.domElement);controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=0.6;controls.maxDistance=8;controls.target.set(0,0.3,0);controls.update();
+const controls=new OrbitControls(cam, ren.domElement);controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=0.8;controls.maxDistance=18;controls.target.set(0,0.65,0);controls.update();
 function resize(){const w=document.getElementById('canvasWrap').clientWidth;const h=document.getElementById('canvasWrap').clientHeight||440;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);}window.addEventListener('resize',resize);new ResizeObserver(resize).observe(document.getElementById('canvasWrap'));resize();
-scene.add(new THREE.AmbientLight(0x8aa88a,0.8));const dl=new THREE.DirectionalLight(0xffeebb,1.1);dl.position.set(3,4,2);scene.add(dl);const pl=new THREE.PointLight(0xffaa33,0.5,4);pl.position.set(0,1.5,0);scene.add(pl);
-// floor
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.MeshStandardMaterial({color:0x152015,roughness:0.8}));floor.rotation.x=-Math.PI/2;floor.position.y=-0.6;scene.add(floor);
-// table
-const table=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,0.15,32),new THREE.MeshStandardMaterial({color:0x3a2a1a}));table.position.y=-0.05;scene.add(table);
+scene.add(new THREE.HemisphereLight(0x274b71,0x120b08,0.65));
+const dl=new THREE.DirectionalLight(0xb9dfff,0.75);dl.position.set(-4,9,5);dl.castShadow=true;dl.shadow.mapSize.set(1024,1024);scene.add(dl);
+const fireLight=new THREE.PointLight(0xff7b28,4.2,13,2);fireLight.position.set(0,2.0,-6.0);fireLight.castShadow=true;scene.add(fireLight);
+const magicLight=new THREE.PointLight(0x20d8ff,2.6,10,2);magicLight.position.set(0,1.3,0);scene.add(magicLight);
+
+// Local perspective artwork on a wide, gently curved cylinder (not sphere-warped).
+const envTex=new THREE.TextureLoader().load('./assets/lazarus_library_council.webp');envTex.colorSpace=THREE.SRGBColorSpace;envTex.wrapS=THREE.ClampToEdgeWrapping;
+// Six full-image bays surround the viewer. Each bay retains almost the source aspect ratio,
+// avoiding the severe pole and rear-seam distortion of mapping this flat image to a sphere.
+const surround=new THREE.Group();surround.position.set(0,5.0,-0.4);surround.rotation.y=Math.PI;scene.add(surround);
+for(let bay=0;bay<6;bay++){const panel=new THREE.Mesh(new THREE.CylinderGeometry(18,18,12,18,1,true,bay*Math.PI/3,Math.PI/3),new THREE.MeshBasicMaterial({map:envTex,side:THREE.BackSide,color:0xc7d9e6}));surround.add(panel);}
+
+// Circular paved floor: low-cost procedural concentric stones and radial seams.
+const floorMat=new THREE.MeshStandardMaterial({color:0x20272d,roughness:0.93,metalness:0.05});
+const floor=new THREE.Mesh(new THREE.CylinderGeometry(10.8,10.8,0.28,64),floorMat);floor.position.y=-0.74;floor.receiveShadow=true;scene.add(floor);
+for(let r=1.2;r<10.4;r+=1.15){const ring=new THREE.Mesh(new THREE.RingGeometry(r,r+0.035,64),new THREE.MeshBasicMaterial({color:r<3?0x2ea9c4:0x10171d,transparent:true,opacity:r<3?0.8:0.65,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=-0.585;scene.add(ring);}
+for(let i=0;i<24;i++){const seam=new THREE.Mesh(new THREE.PlaneGeometry(0.025,10.2),new THREE.MeshBasicMaterial({color:0x0d1419,transparent:true,opacity:0.55,side:THREE.DoubleSide}));seam.rotation.x=-Math.PI/2;seam.rotation.z=i*Math.PI/12;seam.position.y=-0.582;seam.position.x=Math.sin(i*Math.PI/12)*5.1;seam.position.z=Math.cos(i*Math.PI/12)*5.1;scene.add(seam);}
+
+// Central raised work dais and luminous inlay.
+const dais=new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.55,0.32,48),new THREE.MeshStandardMaterial({color:0x171b20,roughness:0.78,metalness:0.18}));dais.position.y=-0.43;dais.castShadow=dais.receiveShadow=true;scene.add(dais);
+const glyphRing=new THREE.Mesh(new THREE.TorusGeometry(1.72,0.035,8,96),new THREE.MeshBasicMaterial({color:0x39d9ff}));glyphRing.rotation.x=Math.PI/2;glyphRing.position.y=-0.25;scene.add(glyphRing);
+const table=new THREE.Mesh(new THREE.CylinderGeometry(1.55,1.7,0.18,48),new THREE.MeshStandardMaterial({color:0x3a2417,roughness:0.7,metalness:0.12}));table.position.y=0.05;table.castShadow=true;scene.add(table);
+
+// Stone fireplace behind the Council, with lightweight animated flames.
+const hearth=new THREE.Group();hearth.position.set(0,-0.55,-6.7);scene.add(hearth);
+const stone=new THREE.MeshStandardMaterial({color:0x35373a,roughness:0.95});
+const fireDark=new THREE.MeshStandardMaterial({color:0x130807,roughness:1});
+const back=new THREE.Mesh(new THREE.BoxGeometry(4.4,4.3,0.75),stone);back.position.y=2.05;back.castShadow=true;hearth.add(back);
+const opening=new THREE.Mesh(new THREE.BoxGeometry(2.55,2.45,0.82),fireDark);opening.position.set(0,1.05,0.12);hearth.add(opening);
+for(const x of [-1.75,1.75]){const pillar=new THREE.Mesh(new THREE.BoxGeometry(0.55,3.5,1.0),stone);pillar.position.set(x,1.65,0.18);pillar.castShadow=true;hearth.add(pillar);}
+const mantle=new THREE.Mesh(new THREE.BoxGeometry(4.9,0.42,1.25),stone);mantle.position.set(0,3.42,0.2);mantle.castShadow=true;hearth.add(mantle);
+const flames=[];for(let i=0;i<7;i++){const flame=new THREE.Mesh(new THREE.ConeGeometry(0.16+Math.random()*0.12,0.65+Math.random()*0.45,8),new THREE.MeshBasicMaterial({color:i%2?0xffb12e:0xff5522,transparent:true,opacity:0.86}));flame.position.set((i-3)*0.28,0.55+Math.random()*0.25,0.62);flame.userData.phase=Math.random()*6.28;hearth.add(flame);flames.push(flame);}
+
+// Non-interactive future door/room silhouettes around the chamber.
+const archMat=new THREE.MeshStandardMaterial({color:0x111820,emissive:0x07324a,emissiveIntensity:0.45,roughness:0.75});
+for(const a of [-2.25,-1.5,-0.75,0.75,1.5,2.25]){const arch=new THREE.Group();const rr=9.1;arch.position.set(Math.sin(a)*rr,-0.55,Math.cos(a)*rr);arch.lookAt(0,1.2,0);const door=new THREE.Mesh(new THREE.PlaneGeometry(1.55,3.4),archMat);door.position.y=1.7;arch.add(door);const halo=new THREE.Mesh(new THREE.TorusGeometry(0.94,0.08,8,24,Math.PI),new THREE.MeshBasicMaterial({color:0x2dc9ed}));halo.position.y=3.05;arch.add(halo);scene.add(arch);}
 // book group center
-const bookGroup=new THREE.Group();bookGroup.position.y=0.35;scene.add(bookGroup);
+const bookGroup=new THREE.Group();bookGroup.position.y=0.58;bookGroup.scale.setScalar(1.2);scene.add(bookGroup);
 const matL=new THREE.MeshStandardMaterial({color:0xffffee,emissive:0x000000});const matR=new THREE.MeshStandardMaterial({color:0xffffee,emissive:0x000000});
 const leftPage=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.85),matL);leftPage.position.set(-0.6,0.05,0);leftPage.rotation.set(-0.5,0.3,0);bookGroup.add(leftPage);
 const rightPage=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.85),matR);rightPage.position.set(0.6,0.05,0);rightPage.rotation.set(-0.5,-0.3,0);bookGroup.add(rightPage);
@@ -162,17 +192,26 @@ function nextTurn(){
 }
 // --- END TURN ---
 
-// 4 chairs council
-function makeChair(angle,color,name){const g=new THREE.Group();const dist=2.1;g.position.set(Math.cos(angle)*dist,0,Math.sin(angle)*dist);g.lookAt(0,0,0);
-const seat=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.08,0.5),new THREE.MeshStandardMaterial({color:color}));seat.position.y=0.1;g.add(seat);
-const back=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.06),new THREE.MeshStandardMaterial({color:color}));back.position.set(0,0.4,-0.22);g.add(back);
-const glow=new THREE.Mesh(new THREE.SphereGeometry(0.18,12,12),new THREE.MeshStandardMaterial({color:color,emissive:color,emissiveIntensity:0.4}));glow.position.set(0,0.6,0);g.add(glow);
-g.userData={name};scene.add(g);return g;}
+// Four council positions only. Simple seated figures are static, Quest-safe and mocap-replaceable.
+function makeChair(angle,color,name){const g=new THREE.Group();const dist=5.0;g.position.set(Math.cos(angle)*dist,-0.52,Math.sin(angle)*dist);g.lookAt(0,0.45,0);
+const wood=new THREE.MeshStandardMaterial({color:0x291b15,roughness:0.78,metalness:0.12});
+const accent=new THREE.MeshStandardMaterial({color:color,emissive:color,emissiveIntensity:0.22,roughness:0.65});
+const robe=new THREE.MeshStandardMaterial({color:new THREE.Color(color).multiplyScalar(0.28),roughness:0.9});
+const skin=new THREE.MeshStandardMaterial({color:0x9b735d,roughness:0.88});
+const seat=new THREE.Mesh(new THREE.BoxGeometry(1.15,0.18,1.15),wood);seat.position.y=0.48;seat.castShadow=true;g.add(seat);
+const back=new THREE.Mesh(new THREE.BoxGeometry(1.18,1.75,0.16),wood);back.position.set(0,1.35,-0.51);back.castShadow=true;g.add(back);
+for(const x of [-0.56,0.56]){const post=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,2.25,10),wood);post.position.set(x,1.28,-0.51);post.castShadow=true;g.add(post);const arm=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,1.0),wood);arm.position.set(x,0.88,0);g.add(arm);}
+const crest=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.055,8,24),accent);crest.position.set(0,2.1,-0.49);g.add(crest);
+const torso=new THREE.Mesh(new THREE.CapsuleGeometry(0.36,0.75,5,10),robe);torso.position.set(0,1.35,-0.03);torso.rotation.x=-0.12;torso.castShadow=true;g.add(torso);
+const head=new THREE.Mesh(new THREE.SphereGeometry(0.27,14,10),skin);head.position.set(0,2.08,-0.08);head.castShadow=true;g.add(head);
+for(const x of [-0.34,0.34]){const arm=new THREE.Mesh(new THREE.CapsuleGeometry(0.105,0.62,4,8),robe);arm.position.set(x,1.28,0.16);arm.rotation.x=-0.75;arm.rotation.z=x>0?-0.22:0.22;g.add(arm);const leg=new THREE.Mesh(new THREE.CapsuleGeometry(0.14,0.78,4,8),robe);leg.position.set(x*0.6,0.52,0.42);leg.rotation.x=Math.PI/2.6;g.add(leg);}
+const aura=new THREE.Mesh(new THREE.TorusGeometry(0.64,0.025,6,32),new THREE.MeshBasicMaterial({color:color,transparent:true,opacity:0.75}));aura.rotation.x=Math.PI/2;aura.position.y=0.02;g.add(aura);
+g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});g.userData={name};scene.add(g);return g;}
 const chairs=[
-makeChair(Math.PI*0.25,0xff5555,'LOOM - Fire & Thread'),
-makeChair(Math.PI*0.75,0x55ff88,'ELARA - Earth & Light'),
-makeChair(Math.PI*1.25,0x5599ff,'VEYRA - Air & Judgment'),
-makeChair(Math.PI*1.75,0xffcc33,'ANVIL - Forge & Iron')
+makeChair(Math.PI*0.24,0xe14d70,'LOOM - Fire & Thread'),
+makeChair(Math.PI*0.76,0x66d99b,'ELARA - Earth & Light'),
+makeChair(Math.PI*1.24,0x55bfff,'VEYRA - Air & Judgment'),
+makeChair(Math.PI*1.76,0xffbd45,'ANVIL - Forge & Iron')
 ];
 const loader=new THREE.TextureLoader();
 function log(m,who){const div=document.createElement('div');const t=new Date().toLocaleTimeString();div.innerHTML=`<span style="color:#666">${t}</span> — ${who?`<b style="color:#ffcc66">${who}:</b> `:''}${m}`;document.getElementById('log').prepend(div);}
@@ -202,8 +241,8 @@ document.getElementById('fileIn').onchange=(e)=>{const f=e.target.files[0];if(!f
 document.getElementById('bNo').onclick=()=>{selectedImage=null;boundImage=null;matL.map=matR.map=null;matL.needsUpdate=matR.needsUpdate=true;log('Cleared picture','YOU');};
 document.getElementById('bindBtn').onclick=()=>{if(!selectedImage){log('Pick picture first — click JERRYCAN badge','SYSTEM');return;}setBookTexture(selectedImage);log('BOUND! Book glows — picture law active','YOU');};
 document.getElementById('placeBtn').onclick=()=>{const t=document.getElementById('txt').value;const img=boundImage||selectedImage;if(!img){log('Bind picture first','SYSTEM');return;}placeEntry(t,img); nextTurn();};
-document.getElementById('focusBtn').onclick=()=>{controls.target.set(0,0.35,0);cam.position.set(0,1.0,1.2);controls.update();log('Focused book - book big now','SYSTEM');};
-document.getElementById('reset').onclick=()=>{cam.position.set(0,2.1,2.9);controls.target.set(0,0.35,0);controls.update();log('View reset','SYSTEM');};
+document.getElementById('focusBtn').onclick=()=>{controls.target.set(0,0.65,0);cam.position.set(0,1.65,2.8);controls.update();log('Focused book - book big now','SYSTEM');};
+document.getElementById('reset').onclick=()=>{cam.position.set(0,3.4,8.6);controls.target.set(0,0.65,0);controls.update();log('View reset','SYSTEM');};
 // click book to edit text - restored
 const ray=new THREE.Raycaster(); const mouse=new THREE.Vector2();
 ren.domElement.addEventListener('click',(e)=>{
@@ -232,6 +271,9 @@ setTimeout(highlightTurn,800);
 function vrTick(){
   handleWASD();
   if(bookGroup) bookGroup.rotation.y+=0.002;
+  const now=performance.now()*0.001;
+  flames.forEach((f,i)=>{f.scale.y=0.82+Math.sin(now*5.2+f.userData.phase)*0.18;f.position.x+=(Math.sin(now*3+i)*0.00045);});
+  fireLight.intensity=4.0+Math.sin(now*8.1)*0.28+Math.sin(now*3.7)*0.22;
   controls.update();
   // update wrist status from relay
   const rl=getRelay();
