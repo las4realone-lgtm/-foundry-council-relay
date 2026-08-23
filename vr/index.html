@@ -95,16 +95,17 @@ import {XRControllerModelFactory} from 'three/addons/webxr/XRControllerModelFact
 let selectedImage=null,boundImage=null;
 const thumbs={forest:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=60', jerry:'https://images.unsplash.com/photo-1596003906949-67221c37965c?w=400&q=60', desert:'https://images.unsplash.com/photo-1683009427513-28e1638a292a?w=400&q=60'};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x030710);scene.fog=new THREE.FogExp2(0x07101a,0.016);
-const cam=new THREE.PerspectiveCamera(65,1,0.1,120);cam.position.set(0,3.4,8.6);
+const playerRig=new THREE.Group(); scene.add(playerRig);
+const cam=new THREE.PerspectiveCamera(65,1,0.1,120);cam.position.set(0,3.4,8.6);playerRig.add(cam);
 const ren=new THREE.WebGLRenderer({antialias:true});ren.setSize(800,440);ren.xr.enabled=true;ren.outputColorSpace=THREE.SRGBColorSpace;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.05;ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;document.getElementById('canvasWrap').appendChild(ren.domElement);
 // VR BUTTON - FIX FOR HEADSET
 document.getElementById('vrBtnContainer').appendChild(VRButton.createButton(ren));
 // Controllers + wrist panel for VR
-const controller1=ren.xr.getController(0); scene.add(controller1);
-const controller2=ren.xr.getController(1); scene.add(controller2);
+const controller1=ren.xr.getController(0); playerRig.add(controller1);
+const controller2=ren.xr.getController(1); playerRig.add(controller2);
 const controllerModelFactory=new XRControllerModelFactory();
-const grip1=ren.xr.getControllerGrip(0); grip1.add(controllerModelFactory.createControllerModel(grip1)); scene.add(grip1);
-const grip2=ren.xr.getControllerGrip(1); grip2.add(controllerModelFactory.createControllerModel(grip2)); scene.add(grip2);
+const grip1=ren.xr.getControllerGrip(0); grip1.add(controllerModelFactory.createControllerModel(grip1)); playerRig.add(grip1);
+const grip2=ren.xr.getControllerGrip(1); grip2.add(controllerModelFactory.createControllerModel(grip2)); playerRig.add(grip2);
 // Simple ray lines for pointing
 const geom=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
 const line1=new THREE.Line(geom, new THREE.LineBasicMaterial({color:0x00d0ff})); line1.name='line'; line1.scale.z=5; controller1.add(line1.clone());
@@ -117,10 +118,12 @@ function drawWrist(text){wristCtx.fillStyle='#000'; wristCtx.fillRect(0,0,512,25
 drawWrist('READY - VEYRA 2');
 const wristTex=new THREE.CanvasTexture(wristCanvas);
 const wristMat=new THREE.MeshBasicMaterial({map:wristTex, transparent:true});
-const wristMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.4,0.2), wristMat);
-wristMesh.position.set(0,0.05,0); wristMesh.rotation.x=-Math.PI/2.5;
-wristGroup.add(wristMesh);
-controller2.add(wristGroup);
+const wristMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.11), wristMat);
+wristMesh.position.set(0.06,0.035,-0.08); wristMesh.rotation.set(-Math.PI/2.25,0,0.12);
+wristGroup.add(wristMesh); wristGroup.visible=false;
+grip1.add(wristGroup);
+let wristVisible=false;
+function toggleWrist(){ wristVisible=!wristVisible; wristGroup.visible=wristVisible; drawWrist(wristVisible?'READY - SELECT BUTTON':'HIDDEN'); wristTex.needsUpdate=true; }
 // Relay sync check
 function getRelay(){ try{ const raw=localStorage.getItem('foundry_relay_v0_ledger'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 
@@ -132,7 +135,7 @@ const fireLight=new THREE.PointLight(0xff7b28,4.2,13,2);fireLight.position.set(0
 const magicLight=new THREE.PointLight(0x20d8ff,2.6,10,2);magicLight.position.set(0,1.3,0);scene.add(magicLight);
 
 // Local perspective artwork on a wide, gently curved cylinder (not sphere-warped).
-const envTex=new THREE.TextureLoader().load('./assets/lazarus_library_council.webp');envTex.colorSpace=THREE.SRGBColorSpace;envTex.wrapS=THREE.ClampToEdgeWrapping;
+const envTex=new THREE.TextureLoader().load('/assets/lazarus_library_council.webp');envTex.colorSpace=THREE.SRGBColorSpace;envTex.wrapS=THREE.ClampToEdgeWrapping;
 // Six full-image bays surround the viewer. Each bay retains almost the source aspect ratio,
 // avoiding the severe pole and rear-seam distortion of mapping this flat image to a sphere.
 const surround=new THREE.Group();surround.position.set(0,5.0,-0.4);surround.rotation.y=Math.PI;scene.add(surround);
@@ -268,8 +271,47 @@ loadLedger();
 setTimeout(highlightTurn,800);
 
 // FLAT + VR compatible loop
-function vrTick(){
-  handleWASD();
+let lastXRTime=0, snapReady=true, wristButtonDown=false;
+const xrForward=new THREE.Vector3(), xrRight=new THREE.Vector3(), xrOrigin=new THREE.Vector3(), xrDirection=new THREE.Vector3();
+function axesFor(source){
+  const a=source&&source.gamepad?source.gamepad.axes:[];
+  return a.length>=4?[a[a.length-2]||0,a[a.length-1]||0]:[a[0]||0,a[1]||0];
+}
+function handleXRControls(dt){
+  const session=ren.xr.getSession(); if(!session)return;
+  for(const source of session.inputSources){
+    if(!source.gamepad)continue;
+    const [x,y]=axesFor(source);
+    if(source.handedness==='left'){
+      cam.getWorldDirection(xrForward); xrForward.y=0; xrForward.normalize();
+      xrRight.crossVectors(xrForward,new THREE.Vector3(0,1,0)).normalize();
+      const speed=2.0*dt;
+      if(Math.abs(y)>0.16)playerRig.position.addScaledVector(xrForward,-y*speed);
+      if(Math.abs(x)>0.16)playerRig.position.addScaledVector(xrRight,x*speed);
+      const togglePressed=!!(source.gamepad.buttons[4]&&source.gamepad.buttons[4].pressed);
+      if(togglePressed&&!wristButtonDown)toggleWrist();
+      wristButtonDown=togglePressed;
+    }else if(source.handedness==='right'){
+      if(Math.abs(x)>0.72&&snapReady){playerRig.rotation.y-=Math.sign(x)*THREE.MathUtils.degToRad(30);snapReady=false;}
+      if(Math.abs(x)<0.28)snapReady=true;
+    }
+  }
+}
+function selectFromController(controller){
+  xrOrigin.setFromMatrixPosition(controller.matrixWorld);
+  xrDirection.set(0,0,-1).transformDirection(controller.matrixWorld);
+  ray.set(xrOrigin,xrDirection);
+  if(wristVisible&&ray.intersectObject(wristMesh,true).length){document.getElementById('wristAutoBtn').click();return;}
+  const hits=ray.intersectObjects([leftPage,rightPage,spine],true);
+  if(hits.length){document.getElementById('txt').focus();log('VR trigger focused book - choose an action deliberately','YOU:10');}
+}
+controller1.addEventListener('selectstart',()=>selectFromController(controller1));
+controller2.addEventListener('selectstart',()=>selectFromController(controller2));
+controller1.addEventListener('squeezestart',toggleWrist);
+
+function vrTick(time){
+  const dt=lastXRTime?Math.min(0.05,(time-lastXRTime)/1000):0; lastXRTime=time;
+  if(ren.xr.isPresenting)handleXRControls(dt); else handleWASD();
   if(bookGroup) bookGroup.rotation.y+=0.002;
   const now=performance.now()*0.001;
   flames.forEach((f,i)=>{f.scale.y=0.82+Math.sin(now*5.2+f.userData.phase)*0.18;f.position.x+=(Math.sin(now*3+i)*0.00045);});
@@ -331,9 +373,7 @@ document.getElementById('wristAutoBtn').onclick=()=>{
 };
 document.getElementById('enterVRInfo').onclick=()=>{ alert('To enter real VR:\n1. Deploy this file to Netlify HTTPS\n2. Open in Quest Browser\n3. Click ENTER VR button bottom-right\n4. Use left controller wrist panel - pinch POINT 2 and PLACE\n5. Relay file must be on SAME domain for ledger sync'); };
 
-// Controller select events - in VR, trigger = POINT 2
-controller1.addEventListener('selectstart',()=>{ document.getElementById('wristAutoBtn').click(); });
-controller2.addEventListener('selectstart',()=>{ document.getElementById('wristAutoBtn').click(); });
+// Controller triggers now ray-select; POINT 2 / PLACE only fires when the visible wrist button is deliberately selected.
 
 log('V6-A v3.4 SAFE-TALK V3.4 SAFE-TALK TAURI-READY GRANDMA BIG VIEW TURN 1-2-3-4-5-6-1 — Turn by turn — Full council 4 chairs + book + picture law — drag to look, scroll zoom, WASD, BIND button — file:// friendly — no restriction — picture law active','SYSTEM');
 </script>
