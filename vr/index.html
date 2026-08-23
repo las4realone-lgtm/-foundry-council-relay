@@ -134,18 +134,57 @@ const dl=new THREE.DirectionalLight(0xb9dfff,0.75);dl.position.set(-4,9,5);dl.ca
 const fireLight=new THREE.PointLight(0xff7b28,4.2,13,2);fireLight.position.set(0,2.0,-6.0);fireLight.castShadow=true;scene.add(fireLight);
 const magicLight=new THREE.PointLight(0x20d8ff,2.6,10,2);magicLight.position.set(0,1.3,0);scene.add(magicLight);
 
-// Local perspective artwork on a wide, gently curved cylinder (not sphere-warped).
-const envTex=new THREE.TextureLoader().load('/assets/lazarus_library_council.webp');envTex.colorSpace=THREE.SRGBColorSpace;envTex.wrapS=THREE.ClampToEdgeWrapping;
-// Six full-image bays surround the viewer. Each bay retains almost the source aspect ratio,
-// avoiding the severe pole and rear-seam distortion of mapping this flat image to a sphere.
-const surround=new THREE.Group();surround.position.set(0,5.0,-0.4);surround.rotation.y=Math.PI;scene.add(surround);
-for(let bay=0;bay<6;bay++){const panel=new THREE.Mesh(new THREE.CylinderGeometry(18,18,12,18,1,true,bay*Math.PI/3,Math.PI/3),new THREE.MeshBasicMaterial({map:envTex,side:THREE.BackSide,color:0xc7d9e6}));surround.add(panel);}
+// ===== BATCH 2: ENVIRONMENT SHELL ONLY — interaction systems remain frozen =====
+// The source artwork is a normal perspective image, not an equirectangular panorama.
+// Use it once ahead, with cropped side wings, and close the rear with neutral architecture.
+scene.fog=new THREE.FogExp2(0x101e18,0.016);
+scene.children.find(o=>o===dl).intensity=0.55;
+fireLight.intensity=6.5;fireLight.distance=20;
 
-// Circular paved floor: low-cost procedural concentric stones and radial seams.
-const floorMat=new THREE.MeshStandardMaterial({color:0x20272d,roughness:0.93,metalness:0.05});
-const floor=new THREE.Mesh(new THREE.CylinderGeometry(10.8,10.8,0.28,64),floorMat);floor.position.y=-0.74;floor.receiveShadow=true;scene.add(floor);
-for(let r=1.2;r<10.4;r+=1.15){const ring=new THREE.Mesh(new THREE.RingGeometry(r,r+0.035,64),new THREE.MeshBasicMaterial({color:r<3?0x2ea9c4:0x10171d,transparent:true,opacity:r<3?0.8:0.65,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=-0.585;scene.add(ring);}
-for(let i=0;i<24;i++){const seam=new THREE.Mesh(new THREE.PlaneGeometry(0.025,10.2),new THREE.MeshBasicMaterial({color:0x0d1419,transparent:true,opacity:0.55,side:THREE.DoubleSide}));seam.rotation.x=-Math.PI/2;seam.rotation.z=i*Math.PI/12;seam.position.y=-0.582;seam.position.x=Math.sin(i*Math.PI/12)*5.1;seam.position.z=Math.cos(i*Math.PI/12)*5.1;scene.add(seam);}
+const envLoader=new THREE.TextureLoader();
+const envTex=envLoader.load('/assets/lazarus_library_council.webp');
+envTex.colorSpace=THREE.SRGBColorSpace;envTex.wrapS=envTex.wrapT=THREE.ClampToEdgeWrapping;
+
+const frontMat=new THREE.MeshBasicMaterial({map:envTex,color:0xd8e4e8,side:THREE.FrontSide});
+const frontWall=new THREE.Mesh(new THREE.PlaneGeometry(17.5,11.65),frontMat);
+frontWall.position.set(0,5.05,-12.0);scene.add(frontWall);
+
+// Cropped image wings continue the palette without repeating or mirroring the full artwork.
+function makeWing(offset,x,rotation){
+  const tex=envTex.clone();tex.needsUpdate=true;tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
+  tex.repeat.set(0.34,1);tex.offset.set(offset,0);tex.colorSpace=THREE.SRGBColorSpace;
+  const wing=new THREE.Mesh(new THREE.PlaneGeometry(10.8,11.65),new THREE.MeshBasicMaterial({map:tex,color:0xcbd9dd,side:THREE.FrontSide}));
+  wing.position.set(x,5.05,-8.05);wing.rotation.y=rotation;scene.add(wing);
+}
+makeWing(0.00,-10.55,-THREE.MathUtils.degToRad(51));
+makeWing(0.66, 10.55, THREE.MathUtils.degToRad(51));
+
+// Neutral rear wall and returns: no duplicated library image behind the viewer.
+const rearMat=new THREE.MeshStandardMaterial({color:0x26312e,roughness:0.96,metalness:0.02});
+const rearWall=new THREE.Mesh(new THREE.BoxGeometry(28,9,0.45),rearMat);rearWall.position.set(0,3.7,12.5);scene.add(rearWall);
+const rearLeft=new THREE.Mesh(new THREE.BoxGeometry(0.45,9,16),rearMat);rearLeft.position.set(-13.8,3.7,4.7);scene.add(rearLeft);
+const rearRight=rearLeft.clone();rearRight.position.x=13.8;scene.add(rearRight);
+
+// A recessed arch marks a future room without opening the shell.
+const archMat=new THREE.MeshStandardMaterial({color:0x111a1b,roughness:1});
+const archDoor=new THREE.Mesh(new THREE.PlaneGeometry(4.6,6.5),archMat);archDoor.position.set(0,2.25,12.25);archDoor.rotation.y=Math.PI;scene.add(archDoor);
+const archTop=new THREE.Mesh(new THREE.TorusGeometry(2.3,0.22,8,32,Math.PI),new THREE.MeshStandardMaterial({color:0x50605a,roughness:0.9}));
+archTop.position.set(0,5.48,12.0);archTop.rotation.z=Math.PI;scene.add(archTop);
+
+// Bright, legible stone floor with low-cost procedural grout and mottling.
+const floorCanvas=document.createElement('canvas');floorCanvas.width=floorCanvas.height=512;
+const floorCtx=floorCanvas.getContext('2d');floorCtx.fillStyle='#2a3a32';floorCtx.fillRect(0,0,512,512);
+floorCtx.strokeStyle='#3d5248';floorCtx.lineWidth=3;
+for(let i=0;i<=512;i+=64){floorCtx.beginPath();floorCtx.moveTo(i,0);floorCtx.lineTo(i,512);floorCtx.stroke();floorCtx.beginPath();floorCtx.moveTo(0,i);floorCtx.lineTo(512,i);floorCtx.stroke();}
+floorCtx.fillStyle='rgba(220,235,225,0.06)';
+for(let i=0;i<140;i++)floorCtx.fillRect(Math.random()*512,Math.random()*512,2+Math.random()*3,2+Math.random()*3);
+const floorTex=new THREE.CanvasTexture(floorCanvas);floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;floorTex.repeat.set(14,14);floorTex.colorSpace=THREE.SRGBColorSpace;
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(90,90),new THREE.MeshStandardMaterial({map:floorTex,color:0xffffff,roughness:0.9,metalness:0.03}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-0.59;floor.receiveShadow=false;scene.add(floor);
+
+// Lightweight dark dome closes the ceiling without another texture.
+const ceiling=new THREE.Mesh(new THREE.SphereGeometry(38,24,12,0,Math.PI*2,0,Math.PI/2),new THREE.MeshBasicMaterial({color:0x121b1c,side:THREE.BackSide,transparent:true,opacity:0.92}));
+ceiling.position.y=-0.62;scene.add(ceiling);
 
 // Central raised work dais and luminous inlay.
 const dais=new THREE.Mesh(new THREE.CylinderGeometry(2.35,2.55,0.32,48),new THREE.MeshStandardMaterial({color:0x171b20,roughness:0.78,metalness:0.18}));dais.position.y=-0.43;dais.castShadow=dais.receiveShadow=true;scene.add(dais);
