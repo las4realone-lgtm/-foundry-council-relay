@@ -117,8 +117,8 @@ const wristCtx=wristCanvas.getContext('2d');
 function drawWrist(text){wristCtx.fillStyle='#000'; wristCtx.fillRect(0,0,512,256); wristCtx.strokeStyle='#00d0ff'; wristCtx.lineWidth=8; wristCtx.strokeRect(0,0,512,256); wristCtx.fillStyle='#00d0ff'; wristCtx.font='bold 36px monospace'; wristCtx.fillText('⌚ WRIST',20,50); wristCtx.font='22px monospace'; wristCtx.fillText(text,20,100); wristCtx.fillStyle='#00d0ff'; wristCtx.fillRect(20,140,220,60); wristCtx.fillStyle='#000'; wristCtx.fillText('POINT 2',40,178); wristCtx.fillStyle='#ffaa33'; wristCtx.fillRect(260,140,220,60); wristCtx.fillStyle='#000'; wristCtx.fillText('PLACE',280,178); }
 drawWrist('READY - VEYRA 2');
 const wristTex=new THREE.CanvasTexture(wristCanvas);
-const wristMat=new THREE.MeshBasicMaterial({map:wristTex, transparent:true});
-const wristMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.11), wristMat);
+const wristMat=new THREE.MeshBasicMaterial({map:wristTex, transparent:true, side:THREE.DoubleSide});
+const wristMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.11), wristMat); wristMesh.geometry.computeBoundingSphere();
 wristMesh.position.set(0.06,0.035,-0.08); wristMesh.rotation.set(-Math.PI/2.25,0,0.12);
 wristGroup.add(wristMesh); wristGroup.visible=false;
 grip1.add(wristGroup);
@@ -391,7 +391,7 @@ function selectFromController(controller){
   xrOrigin.setFromMatrixPosition(controller.matrixWorld);
   xrDirection.set(0,0,-1).transformDirection(controller.matrixWorld);
   ray.set(xrOrigin,xrDirection);
-  if(wristVisible&&ray.intersectObject(wristMesh,true).length){document.getElementById('wristAutoBtn').click();return;}
+  if(wristVisible){wristGroup.updateMatrixWorld(true);if(ray.intersectObject(wristMesh,true).length){document.getElementById('wristAutoBtn').click();return;}}
   const hits=ray.intersectObjects([leftPage,rightPage,spine],true);
   if(hits.length){
     bookGroup.userData.xrSelected=true;
