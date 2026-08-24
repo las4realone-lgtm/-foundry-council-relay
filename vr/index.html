@@ -159,7 +159,7 @@ async function bridgePull(){
       bridgeRelay=shared.relay;bridgeRelayAt=shared.relayUpdatedAt;
       localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(bridgeRelay));
     }
-    const v=shared.vr;
+    const v=shared.vr;    if(!v&&ledger.length){await bridgePushVR();}
     if(v&&shared.vrUpdatedAt&&shared.vrUpdatedAt!==bridgeVrAt){
       bridgeVrAt=shared.vrUpdatedAt;
       if((Number(v.lamport)||0)>lamport||(ledger.length===0&&Array.isArray(v.ledger)&&v.ledger.length)){
