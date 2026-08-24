@@ -24,7 +24,11 @@ She wrote book, Elara built game, you built VR and connection, Anvil math, Claud
 .badge.on{background:#ffaa33;color:#000;border-color:#ffaa33}
 #main{display:grid;grid-template-columns:1.4fr 0.6fr;gap:8px;padding:8px;height:calc(100vh - 48px)}
 #vr{border:1px solid #285465;border-radius:10px;background:#050a10;position:relative;overflow:hidden;display:flex;flex-direction:column}
-#canvasWrap{flex:1;min-height:380px;cursor:grab}
+#canvasWrap{flex:1;min-height:380px;cursor:grab;position:relative;z-index:1}
+#canvasWrap canvas{display:block;position:relative;z-index:1;pointer-events:auto}
+#header,#controls,#help,#log,#wristDom,#vrBtnContainer{pointer-events:auto}
+#wristDom,#vrBtnContainer{isolation:isolate}
+#wristDom button,.btn,.badge,input{pointer-events:auto;touch-action:manipulation}
 #controls{padding:6px 8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#101a10;border-top:1px solid #223322}
 .btn{padding:6px 10px;border-radius:8px;border:1px solid #ffaa33;background:#2a1e0a;color:#ffcc66;cursor:pointer;font-weight:bold;font-size:12px}
 .btn.big{background:#ffaa33;color:#000}
@@ -128,6 +132,13 @@ function toggleWrist(){ wristVisible=!wristVisible; wristGroup.visible=wristVisi
 function getRelay(){ try{ const raw=localStorage.getItem('foundry_relay_v0_ledger'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 
 const controls=new OrbitControls(cam, ren.domElement);controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=0.8;controls.maxDistance=18;controls.target.set(0,0.65,0);controls.update();
+// Keep DOM controls above the renderer from leaking pointer/touch input into OrbitControls.
+for(const id of ['header','controls','wristDom','vrBtnContainer']){
+  const el=document.getElementById(id); if(!el)continue;
+  for(const type of ['pointerdown','pointerup','click','touchstart','touchend']){
+    el.addEventListener(type,(event)=>event.stopPropagation(),{passive:true});
+  }
+}
 function resize(){const w=document.getElementById('canvasWrap').clientWidth;const h=document.getElementById('canvasWrap').clientHeight||440;cam.aspect=w/h;cam.updateProjectionMatrix();ren.setSize(w,h);}window.addEventListener('resize',resize);new ResizeObserver(resize).observe(document.getElementById('canvasWrap'));resize();
 scene.add(new THREE.HemisphereLight(0x274b71,0x120b08,0.65));
 const dl=new THREE.DirectionalLight(0xb9dfff,0.75);dl.position.set(-4,9,5);dl.castShadow=true;dl.shadow.mapSize.set(1024,1024);scene.add(dl);
@@ -333,7 +344,7 @@ document.getElementById('bChoose').onclick=()=>document.getElementById('fileIn')
 document.getElementById('fileIn').onchange=(e)=>{const f=e.target.files[0];if(!f)return;const url=URL.createObjectURL(f); if(window._lastObjUrl) URL.revokeObjectURL(window._lastObjUrl); window._lastObjUrl=url; selectedImage=url; setBookTexture(url);log('Custom file '+f.name+' — bound','YOU');};
 document.getElementById('bNo').onclick=()=>{selectedImage=null;boundImage=null;matL.map=matR.map=null;matL.needsUpdate=matR.needsUpdate=true;log('Cleared picture','YOU');};
 document.getElementById('bindBtn').onclick=()=>{if(!selectedImage){log('Pick picture first — click JERRYCAN badge','SYSTEM');return;}setBookTexture(selectedImage);log('BOUND! Book glows — picture law active','YOU');};
-document.getElementById('placeBtn').onclick=()=>{const t=document.getElementById('txt').value;const img=boundImage||selectedImage;if(!img){log('Bind picture first','SYSTEM');return;}placeEntry(t,img); nextTurn();};
+document.getElementById('placeBtn').onclick=()=>{const t=document.getElementById('txt').value;const img=boundImage||selectedImage;if(!img){document.getElementById('wristStatus').innerText='Bind a picture before PLACE';log('PLACE blocked by picture law — select an image, then BIND','SYSTEM');return;}placeEntry(t,img);nextTurn();document.getElementById('wristStatus').innerText='PLACED — Lamport '+lamport;};
 document.getElementById('focusBtn').onclick=()=>{controls.target.set(0,0.65,0);cam.position.set(0,1.65,2.8);controls.update();log('Focused book - book big now','SYSTEM');};
 document.getElementById('reset').onclick=()=>{cam.position.set(0,3.4,8.6);controls.target.set(0,0.65,0);controls.update();log('View reset','SYSTEM');};
 // click book to edit text - restored
@@ -391,7 +402,7 @@ function selectFromController(controller){
   xrOrigin.setFromMatrixPosition(controller.matrixWorld);
   xrDirection.set(0,0,-1).transformDirection(controller.matrixWorld);
   ray.set(xrOrigin,xrDirection);
-  if(wristVisible){wristGroup.updateMatrixWorld(true);if(ray.intersectObject(wristMesh,true).length){document.getElementById('wristAutoBtn').click();return;}}
+  if(wristVisible){playerRig.updateMatrixWorld(true);controller.updateMatrixWorld(true);wristGroup.updateMatrixWorld(true);const wristHits=ray.intersectObject(wristMesh,true);if(wristHits.length){drawWrist('SELECTED - PROCESSING');wristTex.needsUpdate=true;document.getElementById('wristAutoBtn').click();return;}}
   const hits=ray.intersectObjects([leftPage,rightPage,spine],true);
   if(hits.length){
     bookGroup.userData.xrSelected=true;
@@ -430,9 +441,8 @@ ren.setAnimationLoop(vrTick);
 
 // WRIST DOM BUTTON - FLAT MODE (works in headset browser too)
 document.getElementById('wristAutoBtn').onclick=()=>{
-  const btnPoint=document.getElementById('bindBtn'); // placeholder
-  const realPrompt=window.prompt;
-  window.prompt=(msg)=>{ if(msg && msg.toLowerCase().includes('which node')) return '2'; return realPrompt.apply(window,arguments); };
+  const status=document.getElementById('wristStatus');
+  status.innerText='POINT 2 + PLACE processing…';
   // trigger existing point via ledger POINT buttons if present, else use placeEntry flow
   // For V6-A, we simulate POINT to Veyra
   const ledgerRaw=localStorage.getItem('foundry_relay_v0_ledger');
@@ -465,10 +475,12 @@ document.getElementById('wristAutoBtn').onclick=()=>{
     }catch(e){ log('Wrist error '+e,'SYSTEM'); }
   } else {
     // No relay, just do normal V6-A PLACE
+    const img=boundImage||selectedImage;
+    if(!img){status.innerText='Bind a picture before PLACE';log('WRIST blocked by picture law — select an image, then BIND','SYSTEM');return;}
     document.getElementById('placeBtn').click();
-    log('WRIST: BIND->PLACE in V6-A ledger','YOU');
+    log('WRIST: PLACE requested in V6-A ledger','YOU');
   }
-  setTimeout(()=>{ window.prompt=realPrompt; },1000);
+  setTimeout(()=>{if(status.innerText.includes('processing'))status.innerText='Ready';},1000);
 };
 document.getElementById('enterVRInfo').onclick=()=>{ alert('To enter real VR:\n1. Deploy this file to Netlify HTTPS\n2. Open in Quest Browser\n3. Click ENTER VR button bottom-right\n4. Use left controller wrist panel - pinch POINT 2 and PLACE\n5. Relay file must be on SAME domain for ledger sync'); };
 
