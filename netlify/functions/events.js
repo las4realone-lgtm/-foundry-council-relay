@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { connectLambda, getStore } from "@netlify/blobs";
+import { getStore } from "@netlify/blobs";
 
 const STORE_NAME = "foundry-council-events-v0";
 const MAX_BODY = 128000;
@@ -15,7 +15,7 @@ const headers = {
 };
 
 function reply(statusCode, value) {
-  return { statusCode, headers, body: JSON.stringify(value) };
+  return new Response(JSON.stringify(value), { status: statusCode, headers });
 }
 
 function canonical(value) {
@@ -60,7 +60,6 @@ function validateProposal(value) {
 
 async function readSession(store, sessionId) {
   const result = await store.getWithMetadata(sessionKey(sessionId), {
-    consistency: "strong",
     type: "json"
   });
   return {
@@ -85,23 +84,23 @@ function canonicalEvent(proposal, sequence) {
   };
 }
 
-export async function handler(event) {
-  connectLambda(event);
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-  const store = getStore(STORE_NAME);
+export default async function handler(request) {
+  if (request.method === "OPTIONS") return new Response("", { status: 204, headers });
+  const store = getStore({ name: STORE_NAME, consistency: "strong" });
 
-  if (event.httpMethod === "GET") {
-    const sessionId = cleanText(event.queryStringParameters?.sessionId, 96);
+  if (request.method === "GET") {
+    const sessionId = cleanText(new URL(request.url).searchParams.get("sessionId"), 96);
     if (!sessionId) return reply(400, { ok: false, error: "sessionId is required" });
     const { state } = await readSession(store, sessionId);
     return reply(200, { ok: true, session: state });
   }
 
-  if (event.httpMethod !== "POST") return reply(405, { ok: false, error: "GET or POST only" });
-  if ((event.body || "").length > MAX_BODY) return reply(413, { ok: false, error: "Event payload too large" });
+  if (request.method !== "POST") return reply(405, { ok: false, error: "GET or POST only" });
+  const body = await request.text();
+  if (body.length > MAX_BODY) return reply(413, { ok: false, error: "Event payload too large" });
 
   let proposal;
-  try { proposal = JSON.parse(event.body || "{}"); }
+  try { proposal = JSON.parse(body || "{}"); }
   catch { return reply(400, { ok: false, error: "Invalid JSON" }); }
 
   const error = validateProposal(proposal);
@@ -136,4 +135,3 @@ export async function handler(event) {
 
   return reply(503, { ok: false, error: "CONCURRENT_WRITE_RETRY_EXHAUSTED" });
 }
-
