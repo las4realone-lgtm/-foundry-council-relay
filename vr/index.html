@@ -398,11 +398,67 @@ function handleXRControls(dt){
     }
   }
 }
+
+function setWristFeedback(message){
+  drawWrist(message); wristTex.needsUpdate=true;
+  document.getElementById('wristStatus').innerText=message;
+}
+function wristPointOnly(){
+  const raw=localStorage.getItem('foundry_relay_v0_ledger');
+  if(!raw){setWristFeedback('POINT NEEDS RELAY');log('WRIST POINT blocked - open an active claim in relay/ first','SYSTEM');return;}
+  try{
+    const l=JSON.parse(raw);
+    if(!l.active_claim){setWristFeedback('POINT NEEDS CLAIM');log('WRIST POINT blocked - open an active claim in relay/ first','SYSTEM');return;}
+    l.direct_reference=2;
+    l.fuel=Math.max(0,(l.fuel||0)-1);
+    l.next_node=l.fuel===0?1:2;
+    l.visits=l.visits||[]; l.visits.push(2);
+    localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(l));
+    setWristFeedback('POINT 2 - FUEL '+l.fuel);
+    log('WRIST: POINT 2 Veyra fuel->'+l.fuel,'YOU:10');
+  }catch(e){setWristFeedback('POINT ERROR');log('Wrist POINT error '+e,'SYSTEM');}
+}
+function wristPlaceOnly(){
+  const raw=localStorage.getItem('foundry_relay_v0_ledger');
+  if(raw){
+    try{
+      const l=JSON.parse(raw);
+      if(l.active_claim){
+        l.fuel=Math.max(0,(l.fuel||0)-1);
+        if(l.fuel===0)l.next_node=1;
+        l.current_node=l.next_node||1;
+        l.history=l.history||[];
+        l.history.push({message_id:'msg_'+Math.random().toString(36).slice(2),IDENTITY:{sender:2,role_signature:'Veyra'},ROUTING:{next:l.next_node,route_reason:l.fuel===0?'FUEL_EXHAUSTED_RETURN_TO_ARCHITECT':'WRIST_PLACE'},CONTROL:{fuel_remaining:l.fuel,state:l.fuel===0?'CLOSED':'ANSWERED'}});
+        localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(l));
+        setWristFeedback('PLACED - FUEL '+l.fuel);
+        log('WRIST: PLACE sealed fuel->'+l.fuel+' routed to '+l.next_node,'ANVIL');
+        return;
+      }
+    }catch(e){setWristFeedback('PLACE ERROR');log('Wrist PLACE error '+e,'SYSTEM');return;}
+  }
+  const img=boundImage||selectedImage;
+  if(!img){setWristFeedback('BIND PICTURE FIRST');log('WRIST PLACE blocked by picture law - select an image, then BIND','SYSTEM');return;}
+  document.getElementById('placeBtn').click();
+  setWristFeedback('PLACED - LAMPORT '+lamport);
+}
+
 function selectFromController(controller){
   xrOrigin.setFromMatrixPosition(controller.matrixWorld);
   xrDirection.set(0,0,-1).transformDirection(controller.matrixWorld);
   ray.set(xrOrigin,xrDirection);
-  if(wristVisible){playerRig.updateMatrixWorld(true);controller.updateMatrixWorld(true);wristGroup.updateMatrixWorld(true);const wristHits=ray.intersectObject(wristMesh,true);if(wristHits.length){drawWrist('SELECTED - PROCESSING');wristTex.needsUpdate=true;document.getElementById('wristAutoBtn').click();return;}}
+  if(wristVisible){
+    playerRig.updateMatrixWorld(true); controller.updateMatrixWorld(true); wristGroup.updateMatrixWorld(true);
+    const wristHits=ray.intersectObject(wristMesh,true);
+    if(wristHits.length){
+      const uv=wristHits[0].uv;
+      const px=uv?uv.x*512:-1;
+      const py=uv?(1-uv.y)*256:-1;
+      if(py>=140&&py<=200&&px>=20&&px<=240)wristPointOnly();
+      else if(py>=140&&py<=200&&px>=260&&px<=480)wristPlaceOnly();
+      else setWristFeedback('AIM AT BUTTON');
+      return;
+    }
+  }
   const hits=ray.intersectObjects([leftPage,rightPage,spine],true);
   if(hits.length){
     bookGroup.userData.xrSelected=true;
