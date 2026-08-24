@@ -26,7 +26,7 @@ function reply(statusCode, value) {
 }
 
 async function readState(store) {
-  const raw = await store.get(STATE_KEY, { consistency: "strong" });
+  const raw = await store.get(STATE_KEY);
   if (!raw) return emptyState();
   try { return { ...emptyState(), ...JSON.parse(raw) }; }
   catch { return emptyState(); }
@@ -35,7 +35,7 @@ async function readState(store) {
 export async function handler(event) {
   connectLambda(event);
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-  const store = getStore({ name: STORE_NAME, consistency: "strong" });
+  const store = getStore(STORE_NAME);
 
   if (event.httpMethod === "GET") {
     return reply(200, { ok: true, state: await readState(store) });
