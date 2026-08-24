@@ -70,6 +70,7 @@ input[type=text]{padding:6px;border-radius:6px;border:1px solid #444;background:
 <button id="wristAutoBtn">POINT 2 Veyra + PLACE</button>
 <button id="enterVRInfo" style="background:#ffaa33;color:#000;margin-top:4px">ENTER VR info</button>
 <button id="questEventTestBtn" style="background:#ffd166;color:#000;margin-top:4px">QUEST EVENT TEST → /events</button>
+<button id="questSyncQueueBtn" style="background:#ff9f1c;color:#000;margin-top:4px">SYNC QUEUE NOW • PENDING ?</button>
 </div>
 
 <div id="bigView"><button class="close" onclick="document.getElementById('bigView').classList.remove('on')">CLOSE X</button><img id="bigImg"><div class="bigTxt" id="bigTxt"></div><div style="margin-top:10px;display:flex;gap:8px"><button class="btn big" id="bigPointBtn">👆 GRANDMA POINTS THIS</button><span id="bigLamport" class="badge">Lamport</span></div></div>
@@ -616,6 +617,7 @@ log('V6-A v3.4 SAFE-TALK V3.4 SAFE-TALK TAURI-READY GRANDMA BIG VIEW TURN 1-2-3-
 // TEMPORARY QUEST OFFLINE/RECONNECT TEST — isolated from /state and the production VR ledger.
 const EVENT_DB='foundry-authoritative-events-v1';
 const EVENT_OUTBOX='outbox';
+const EVENT_FALLBACK_KEY='foundry-authoritative-event-outbox-v1';
 function openEventDb(){
   return new Promise((resolve,reject)=>{
     const request=indexedDB.open(EVENT_DB,1);
@@ -638,6 +640,33 @@ async function withOutbox(mode,run){
 const queueEvent=event=>withOutbox('readwrite',store=>store.put(event));
 const queuedEvents=()=>withOutbox('readonly',store=>store.getAll());
 const removeQueuedEvent=eventId=>withOutbox('readwrite',store=>store.delete(eventId));
+function readFallbackEvents(){
+  try{const value=JSON.parse(localStorage.getItem(EVENT_FALLBACK_KEY)||'[]');return Array.isArray(value)?value:[];}catch{return [];}
+}
+function writeFallbackEvent(event){
+  const events=readFallbackEvents().filter(item=>item.eventId!==event.eventId);
+  events.push(event);
+  localStorage.setItem(EVENT_FALLBACK_KEY,JSON.stringify(events));
+}
+function removeFallbackEvent(eventId){
+  const events=readFallbackEvents().filter(item=>item.eventId!==eventId);
+  if(events.length)localStorage.setItem(EVENT_FALLBACK_KEY,JSON.stringify(events));
+  else localStorage.removeItem(EVENT_FALLBACK_KEY);
+}
+async function getPendingEvents(){
+  let idb=[];
+  try{idb=await queuedEvents();}catch(error){log('IndexedDB outbox read failed; using fallback: '+error,'SYSTEM');}
+  const combined=new Map();
+  [...readFallbackEvents(),...idb].forEach(event=>combined.set(event.eventId,event));
+  return [...combined.values()].sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
+}
+async function updateOutboxUi(){
+  const pending=await getPendingEvents();
+  const syncButton=document.getElementById('questSyncQueueBtn');
+  syncButton.innerText='SYNC QUEUE NOW • PENDING '+pending.length;
+  syncButton.style.background=pending.length?'#ff9f1c':'#6b8e23';
+  return pending.length;
+}
 async function postAuthoritativeEvent(proposal){
   const response=await fetch('/.netlify/functions/events',{
     method:'POST',
@@ -659,17 +688,19 @@ function showQuestResult(result,prefix='QUEST'){
 }
 async function flushEventOutbox(){
   // Quest Browser can keep navigator.onLine stale after Wi-Fi returns; a real fetch is the authority.
-  const pending=(await queuedEvents()).sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
+  const pending=await getPendingEvents();
   for(const proposal of pending){
     try{
       const result=await postAuthoritativeEvent(proposal);
       await removeQueuedEvent(proposal.eventId);
+      removeFallbackEvent(proposal.eventId);
       showQuestResult(result,'RECONNECTED');
     }catch(error){
       log('QUEST outbox flush paused: '+error,'SYSTEM');
       return;
     }
   }
+  await updateOutboxUi();
 }
 document.getElementById('questEventTestBtn').innerText='OFFLINE QUEUE TEST → /events';
 document.getElementById('questEventTestBtn').onclick=async()=>{
@@ -696,7 +727,9 @@ document.getElementById('questEventTestBtn').onclick=async()=>{
     showQuestResult(result);
   }catch(error){
     try{
+      writeFallbackEvent(proposal);
       await queueEvent(proposal);
+      await updateOutboxUi();
       status.innerText='QUEUED OFFLINE • WAITING FOR WI-FI';
       button.innerText='QUEST EVENT QUEUED';
       button.disabled=false;
@@ -709,6 +742,17 @@ document.getElementById('questEventTestBtn').onclick=async()=>{
     }
   }
 };
+document.getElementById('questSyncQueueBtn').onclick=async()=>{
+  const button=document.getElementById('questSyncQueueBtn');
+  const status=document.getElementById('wristStatus');
+  button.disabled=true;
+  status.innerText='SYNCING QUEUE…';
+  await flushEventOutbox();
+  const remaining=await updateOutboxUi();
+  if(remaining)status.innerText='SYNC PAUSED • '+remaining+' PENDING';
+  button.disabled=false;
+};
+updateOutboxUi();
 window.addEventListener('online',flushEventOutbox);
 setInterval(flushEventOutbox,3000);
 setTimeout(flushEventOutbox,600);
