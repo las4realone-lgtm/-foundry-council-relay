@@ -129,7 +129,56 @@ grip1.add(wristGroup);
 let wristVisible=false;
 function toggleWrist(){ wristVisible=!wristVisible; wristGroup.visible=wristVisible; drawWrist(wristVisible?'READY - SELECT BUTTON':'HIDDEN'); wristTex.needsUpdate=true; }
 // Relay sync check
-function getRelay(){ try{ const raw=localStorage.getItem('foundry_relay_v0_ledger'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
+
+const BRIDGE_URL='/.netlify/functions/state';
+let bridgeRelay=null,bridgeRelayAt='',bridgeVrAt='';
+async function bridgePost(patch){
+  try{
+    const response=await fetch(BRIDGE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+    if(!response.ok)return null;
+    return (await response.json()).state||null;
+  }catch(e){return null;}
+}
+async function bridgePushRelay(relayState){
+  bridgeRelay=relayState;
+  try{localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(relayState));}catch(e){}
+  const state=await bridgePost({source:'vr',relay:relayState});
+  if(state?.relayUpdatedAt)bridgeRelayAt=state.relayUpdatedAt;
+}
+async function bridgePushVR(){
+  const state=await bridgePost({source:'vr',vr:{lamport,ledger,boundImage,turn,updatedAt:new Date().toISOString()}});
+  if(state?.vrUpdatedAt)bridgeVrAt=state.vrUpdatedAt;
+}
+async function bridgePull(){
+  try{
+    const response=await fetch(BRIDGE_URL,{cache:'no-store'});
+    if(!response.ok)return;
+    const data=await response.json();
+    const shared=data.state||{};
+    if(shared.relay&&shared.relayUpdatedAt&&shared.relayUpdatedAt!==bridgeRelayAt){
+      bridgeRelay=shared.relay;bridgeRelayAt=shared.relayUpdatedAt;
+      localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(bridgeRelay));
+    }
+    const v=shared.vr;
+    if(v&&shared.vrUpdatedAt&&shared.vrUpdatedAt!==bridgeVrAt){
+      bridgeVrAt=shared.vrUpdatedAt;
+      if((Number(v.lamport)||0)>lamport||(ledger.length===0&&Array.isArray(v.ledger)&&v.ledger.length)){
+        ledger=Array.isArray(v.ledger)?v.ledger:ledger;
+        lamport=Math.max(Number(v.lamport)||100,100);
+        if(v.boundImage){selectedImage=v.boundImage;setBookTexture(v.boundImage);}
+        if(v.turn){turn=Number(v.turn);saveTurn();highlightTurn();}
+        try{localStorage.setItem('FOUNDRY_V6_A_V3_LEDGER',JSON.stringify(ledger));}catch(e){}
+        render();
+        log('Shared bridge received Lamport '+lamport,'SYSTEM');
+      }else if(v.boundImage&&!boundImage){selectedImage=v.boundImage;setBookTexture(v.boundImage);}
+    }
+    document.getElementById('sync').textContent='AUTO-SYNC: ON · DESKTOP ↔ QUEST';
+  }catch(e){
+    document.getElementById('sync').textContent='AUTO-SYNC: LOCAL FALLBACK';
+  }
+}
+
+function getRelay(){ if(bridgeRelay)return bridgeRelay;try{ const raw=localStorage.getItem('foundry_relay_v0_ledger'); return raw?JSON.parse(raw):null; }catch(e){ return null; } }
 
 const controls=new OrbitControls(cam, ren.domElement);controls.enableDamping=true;controls.dampingFactor=0.08;controls.minDistance=0.8;controls.maxDistance=18;controls.target.set(0,0.65,0);controls.update();
 // Keep DOM controls above the renderer from leaking pointer/touch input into OrbitControls.
@@ -321,7 +370,7 @@ const loader=new THREE.TextureLoader();
 function log(m,who){const div=document.createElement('div');const t=new Date().toLocaleTimeString();div.innerHTML=`<span style="color:#666">${t}</span> — ${who?`<b style="color:#ffcc66">${who}:</b> `:''}${m}`;document.getElementById('log').prepend(div);}
 function setBookTexture(url){boundImage=url;loader.load(url,(tex)=>{tex.colorSpace=THREE.SRGBColorSpace;matL.map=tex;matR.map=tex;matL.needsUpdate=matR.needsUpdate=true;matL.emissive=new THREE.Color(0x553300);matL.emissiveIntensity=0.6;matR.emissive=new THREE.Color(0x553300);matR.emissiveIntensity=0.6;log('Book glows BIG with picture - click FOCUS BOOK to see','ANVIL');chairs.forEach((c,i)=>{setTimeout(()=>{log('I see the picture bound to book',''+c.userData.name.split(' - ')[0]);},i*400);});});}
 let ledger=[],lamport=100;
-function saveLedger(){try{const s=JSON.stringify(ledger);localStorage.setItem('FOUNDRY_V6_A_V3_LEDGER',s);localStorage.setItem('FOUNDRY_V6_A_LEDGER',s);localStorage.setItem('FOUNDRY_V4_8_LEDGER',s);localStorage.setItem('FOUNDRY_V4_7_LEDGER',s);}catch(e){} try{const req=indexedDB.open('FOUNDRY_VAULT',3);req.onupgradeneeded=(ev)=>{const db=ev.target.result;if(!db.objectStoreNames.contains('ledger'))db.createObjectStore('ledger',{keyPath:'id'});};req.onsuccess=(ev)=>{const db=ev.target.result;const tx=db.transaction('ledger','readwrite');ledger.forEach(en=>{try{tx.objectStore('ledger').put(en);}catch{}});};}catch(e){} render();}
+function saveLedger(){try{const s=JSON.stringify(ledger);localStorage.setItem('FOUNDRY_V6_A_V3_LEDGER',s);localStorage.setItem('FOUNDRY_V6_A_LEDGER',s);localStorage.setItem('FOUNDRY_V4_8_LEDGER',s);localStorage.setItem('FOUNDRY_V4_7_LEDGER',s);}catch(e){} try{const req=indexedDB.open('FOUNDRY_VAULT',3);req.onupgradeneeded=(ev)=>{const db=ev.target.result;if(!db.objectStoreNames.contains('ledger'))db.createObjectStore('ledger',{keyPath:'id'});};req.onsuccess=(ev)=>{const db=ev.target.result;const tx=db.transaction('ledger','readwrite');ledger.forEach(en=>{try{tx.objectStore('ledger').put(en);}catch{}});};}catch(e){} render();bridgePushVR();}
 function restoreBook(){const last=[...ledger].reverse().find(e=>e.image); if(last){setBookTexture(last.image);} }
 function loadLedger(){try{const keys=['FOUNDRY_V6_A_V3_LEDGER','FOUNDRY_V6_A_LEDGER','FOUNDRY_V4_8_LEDGER'];for(const k of keys){const a=JSON.parse(localStorage.getItem(k)||'[]');if(a.length){ledger=a; if(ledger.some(e=>(e.lamport||0)>10000)){ledger.sort((a,b)=> (new Date(a.time||0)-new Date(b.time||0)) ); ledger.forEach((e,i)=>e.lamport=101+i); } lamport=Math.max(...ledger.map(x=>x.lamport||0),100); restoreBook(); setTimeout(highlightTurn,400); break;}}}catch(e){} render(); try{const req=indexedDB.open('FOUNDRY_VAULT',3);req.onsuccess=(ev)=>{try{const db=ev.target.result;const tx=db.transaction('ledger','readonly');const st=tx.objectStore('ledger');const rq=st.getAll();rq.onsuccess=()=>{if(rq.result&&rq.result.length>ledger.length){let arr=rq.result; if(arr.some(e=>(e.lamport||0)>10000)){arr.sort((a,b)=>(a.lamport||0)-(b.lamport||0)); arr.forEach((e,i)=>e.lamport=101+i);} ledger=arr.sort((a,b)=>(a.lamport||0)-(b.lamport||0));lamport=Math.max(...ledger.map(x=>x.lamport||0),lamport);restoreBook(); setTimeout(highlightTurn,400); render();}};}catch(e){}};}catch(e){}}
 function render(){const c=document.getElementById('ledger');c.innerHTML='';ledger.slice().reverse().forEach(en=>{const div=document.createElement('div');div.className='entry';div.innerHTML=`<div style="font-size:10px;color:#8fbb66"><b>${en.from} → ${en.to}</b> • ${new Date(en.time).toLocaleTimeString()} • Lamport ${en.lamport}</div><div style="font-size:12px;margin-top:2px">${en.text}</div>${en.image?`<img src="${en.image}" class="ledgerImg" style="cursor:pointer" title="Click for grandma big view">`:''}<button class="point" data-id="${en.id}">👆 POINT (${en.points||0}) - Grandmother points</button><button class="point" style="margin-left:4px;background:#ffaa33;color:#000" data-big="${en.id}">🔍 BIG VIEW - Grandma</button><div class="speak">${en.speaks?en.speaks.map(s=>`<div><b>${s.who}:</b> ${s.msg}</div>`).join(''):''}</div>`;c.appendChild(div);});document.getElementById('lamport').textContent='Lamport '+lamport;c.querySelectorAll('.point').forEach(b=>{b.onclick=()=>{if(b.dataset.big){const e=ledger.find(x=>x.id===b.dataset.big); if(e) showBigView(e);} else {const e=ledger.find(x=>x.id===b.dataset.id);if(e){e.points=(e.points||0)+1;log('POINT on Lamport '+e.lamport+' count '+(e.points),'YOU:10');saveLedger();}}}}); c.querySelectorAll('.ledgerImg').forEach(img=>{img.onclick=()=>{const id=img.closest('.entry').querySelector('[data-big]').dataset.big; const e=ledger.find(x=>x.id===id); if(e) showBigView(e);}});}
@@ -414,6 +463,7 @@ function wristPointOnly(){
     l.next_node=l.fuel===0?1:2;
     l.visits=l.visits||[]; l.visits.push(2);
     localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(l));
+    bridgePushRelay(l);
     setWristFeedback('POINT 2 - FUEL '+l.fuel);
     log('WRIST: POINT 2 Veyra fuel->'+l.fuel,'YOU:10');
   }catch(e){setWristFeedback('POINT ERROR');log('Wrist POINT error '+e,'SYSTEM');}
@@ -430,6 +480,7 @@ function wristPlaceOnly(){
         l.history=l.history||[];
         l.history.push({message_id:'msg_'+Math.random().toString(36).slice(2),IDENTITY:{sender:2,role_signature:'Veyra'},ROUTING:{next:l.next_node,route_reason:l.fuel===0?'FUEL_EXHAUSTED_RETURN_TO_ARCHITECT':'WRIST_PLACE'},CONTROL:{fuel_remaining:l.fuel,state:l.fuel===0?'CLOSED':'ANSWERED'}});
         localStorage.setItem('foundry_relay_v0_ledger',JSON.stringify(l));
+        bridgePushRelay(l);
         setWristFeedback('PLACED - FUEL '+l.fuel);
         log('WRIST: PLACE sealed fuel->'+l.fuel+' routed to '+l.next_node,'ANVIL');
         return;
@@ -511,6 +562,7 @@ document.getElementById('wristAutoBtn').onclick=()=>{
         l.next_node=l.fuel===0?1:2;
         l.visits=(l.visits||[]); l.visits.push(2);
         localStorage.setItem('foundry_relay_v0_ledger', JSON.stringify(l));
+        bridgePushRelay(l);
         log('WRIST: POINT 2 Veyra fuel->'+l.fuel,'YOU:10');
         if(l.fuel>0){
           // auto PLACE after short delay
@@ -522,6 +574,7 @@ document.getElementById('wristAutoBtn').onclick=()=>{
             l2.history=l2.history||[];
             l2.history.push({message_id:'msg_'+Math.random().toString(36).slice(2), IDENTITY:{sender:2, role_signature:'Veyra'}, ROUTING:{next:l2.next_node, route_reason:l2.fuel===0?'FUEL_EXHAUSTED_RETURN_TO_ARCHITECT':'WRIST_PLACE'}, CONTROL:{fuel_remaining:l2.fuel, state:l2.fuel===0?'CLOSED':'ANSWERED'}});
             localStorage.setItem('foundry_relay_v0_ledger', JSON.stringify(l2));
+            bridgePushRelay(l2);
             log('WRIST: PLACE sealed fuel->'+l2.fuel+' routed to '+l2.next_node,'ANVIL');
           },400);
         }
@@ -550,6 +603,9 @@ ren.xr.addEventListener('sessionend',()=>{
   document.getElementById('wristDom').style.display='block';
   wristVisible=false; wristGroup.visible=false;
 });
+
+bridgePull();
+setInterval(bridgePull,2000);
 
 // Controller triggers now ray-select; POINT 2 / PLACE only fires when the visible wrist button is deliberately selected.
 
