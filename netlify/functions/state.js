@@ -1,4 +1,4 @@
-import { getStore } from "@netlify/blobs";
+import { connectLambda, getStore } from "@netlify/blobs";
 
 const STORE_NAME = "foundry-council-bridge";
 const STATE_KEY = "shared-state-v1";
@@ -33,6 +33,7 @@ async function readState(store) {
 }
 
 export async function handler(event) {
+  connectLambda(event);
   if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
   const store = getStore({ name: STORE_NAME, consistency: "strong" });
 
