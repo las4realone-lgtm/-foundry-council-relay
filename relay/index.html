@@ -190,6 +190,50 @@ function runSelfTest() {
 let state = newState();
 // --- UNIFIED PATCH: shared ledger for VR ---
 const LEDGER_KEY = 'foundry_relay_v0_ledger';
+
+const BRIDGE_URL='/.netlify/functions/state';
+let bridgeReady=false;
+let lastBridgeRelayAt='';
+function relaySnapshot(){
+  return {
+    version:state.version,active_claim:state.active_claim,parent_claim:state.parent_claim,
+    current_node:state.current_node,next_node:state.next_node,fuel:state.fuel,
+    yielded_nodes:state.yielded_nodes,visits:state.visits,history:state.history,
+    verified_at:state.verified_at,recovered_context:state.recovered_context
+  };
+}
+async function pushBridgeRelay(snapshot=relaySnapshot()){
+  try{
+    const response=await fetch(BRIDGE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source:'relay',relay:snapshot})});
+    if(!response.ok)return;
+    const data=await response.json();
+    lastBridgeRelayAt=data.state?.relayUpdatedAt||lastBridgeRelayAt;
+  }catch(e){}
+}
+async function pullBridgeRelay(){
+  try{
+    const response=await fetch(BRIDGE_URL,{cache:'no-store'});
+    if(!response.ok)throw new Error('bridge '+response.status);
+    const data=await response.json();
+    const remote=data.state?.relay;
+    const remoteAt=data.state?.relayUpdatedAt||'';
+    let changed=false;
+    if(remote&&remoteAt&&remoteAt!==lastBridgeRelayAt){
+      state={...state,...remote};
+      lastBridgeRelayAt=remoteAt;
+      localStorage.setItem(LEDGER_KEY,JSON.stringify(remote));
+      changed=true;
+    }
+    if(!bridgeReady){bridgeReady=true;changed=true;}
+    if(changed)render();
+    if(!remote)pushBridgeRelay();
+    note('validation','Shared bridge online · desktop and Quest linked.');
+  }catch(e){
+    bridgeReady=true;
+    note('validation','Shared bridge offline · using this browser only.','bad');
+  }
+}
+
 function syncLedger() {
   try {
     const ledger = {
@@ -206,6 +250,7 @@ function syncLedger() {
       recovered_context: state.recovered_context
     };
     localStorage.setItem(LEDGER_KEY, JSON.stringify(ledger));
+    if(bridgeReady) pushBridgeRelay(ledger);
     // also keep in shared folder if file:// access allows
     window.__foundry_ledger = ledger;
   } catch(e) {}
@@ -275,6 +320,8 @@ $('exportState').onclick = () => { const blob=new Blob([pretty(state)],{type:'ap
 $('importState').onchange = async e => { try {state=verifyImport(JSON.parse(await e.target.files[0].text())); note('validation','Imported state verified; parent chain is intact.');render();}catch(err){note('validation',err.message,'bad');}e.target.value='';};
 $('selfTest').onclick = () => {const r=runSelfTest();note('testResult',`${r.pass?'PASS':'FAIL'} · default route ${r.defaultPass?'✓':'✗'} · zigzag/fuel ${r.zigzagPass?'✓':'✗'} · return-to-1 ${r.returnPass?'✓':'✗'} · parent chain ${r.parentPass?'✓':'✗'}`,r.pass?'ok':'bad');};
 render();
+pullBridgeRelay();
+setInterval(pullBridgeRelay,2000);
 
 </script>
 </main></body></html>
