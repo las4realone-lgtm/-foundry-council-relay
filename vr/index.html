@@ -613,36 +613,104 @@ setInterval(bridgePull,2000);
 log('V6-A v3.4 SAFE-TALK V3.4 SAFE-TALK TAURI-READY GRANDMA BIG VIEW TURN 1-2-3-4-5-6-1 — Turn by turn — Full council 4 chairs + book + picture law — drag to look, scroll zoom, WASD, BIND button — file:// friendly — no restriction — picture law active','SYSTEM');
 
 
-// TEMPORARY QUEST-ORIGIN EVENT TEST — isolated from /state and the production VR ledger.
+// TEMPORARY QUEST OFFLINE/RECONNECT TEST — isolated from /state and the production VR ledger.
+const EVENT_DB='foundry-authoritative-events-v1';
+const EVENT_OUTBOX='outbox';
+function openEventDb(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(EVENT_DB,1);
+    request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(EVENT_OUTBOX))request.result.createObjectStore(EVENT_OUTBOX,{keyPath:'eventId'});};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+async function withOutbox(mode,run){
+  const db=await openEventDb();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(EVENT_OUTBOX,mode);
+    const store=tx.objectStore(EVENT_OUTBOX);
+    const request=run(store);
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+    tx.oncomplete=()=>db.close();
+  });
+}
+const queueEvent=event=>withOutbox('readwrite',store=>store.put(event));
+const queuedEvents=()=>withOutbox('readonly',store=>store.getAll());
+const removeQueuedEvent=eventId=>withOutbox('readwrite',store=>store.delete(eventId));
+async function postAuthoritativeEvent(proposal){
+  const response=await fetch('/.netlify/functions/events',{
+    method:'POST',
+    cache:'no-store',
+    headers:{'Content-Type':'application/json','Cache-Control':'no-store'},
+    body:JSON.stringify(proposal)
+  });
+  const result=await response.json();
+  if(!response.ok||!result.ok)throw new Error(result.error||('HTTP '+response.status));
+  return result;
+}
+function showQuestResult(result,prefix='QUEST'){
+  const sequence=result.event?.serverSequence??result.session?.serverSequence;
+  document.getElementById('wristStatus').innerText=(result.duplicate?prefix+' DUPLICATE #':prefix+' ACCEPTED #')+sequence;
+  const button=document.getElementById('questEventTestBtn');
+  button.innerText='QUEST EVENT RECORDED #'+sequence;
+  button.disabled=false;
+  log(prefix+' /events '+(result.duplicate?'duplicate':'accepted')+' sequence '+sequence,'SYSTEM');
+}
+async function flushEventOutbox(){
+  if(!navigator.onLine)return;
+  const pending=(await queuedEvents()).sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
+  for(const proposal of pending){
+    try{
+      const result=await postAuthoritativeEvent(proposal);
+      await removeQueuedEvent(proposal.eventId);
+      showQuestResult(result,'RECONNECTED');
+    }catch(error){
+      log('QUEST outbox flush paused: '+error,'SYSTEM');
+      return;
+    }
+  }
+}
+document.getElementById('questEventTestBtn').innerText='OFFLINE QUEUE TEST → /events';
 document.getElementById('questEventTestBtn').onclick=async()=>{
   const button=document.getElementById('questEventTestBtn');
   const status=document.getElementById('wristStatus');
   button.disabled=true;
   status.innerText='QUEST EVENT TEST: sending…';
+  const payload={from:'quest-headset',to:'desktop',note:'Quest offline queue and reconnect test'};
+  const payloadBytes=new TextEncoder().encode(JSON.stringify(payload));
+  const digest=await crypto.subtle.digest('SHA-256',payloadBytes);
+  const payloadHash='sha256:'+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
   const proposal={
     sessionId:'baseline-102-test',
-    eventId:'baseline-102-test-quest-0005',
+    eventId:'baseline-102-test-quest-offline-0006',
     clientId:'quest-headset-test',
     type:'POINT',
-    clientLamport:4,
+    clientLamport:5,
     createdAt:new Date().toISOString(),
-    payloadHash:'sha256:bdd471256ce126ae9a48c29a2e5149f7c7b5147838508eaa4f8194f53a24222c',
-    payload:{from:'quest-headset',to:'desktop',note:'Quest-originated authoritative event test'}
+    payloadHash,
+    payload
   };
   try{
-    const response=await fetch('/.netlify/functions/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(proposal)});
-    const result=await response.json();
-    if(!response.ok||!result.ok)throw new Error(result.error||('HTTP '+response.status));
-    const sequence=result.event?.serverSequence??result.session?.serverSequence;
-    status.innerText=(result.duplicate?'QUEST DUPLICATE #':'QUEST ACCEPTED #')+sequence;
-    button.innerText='QUEST EVENT RECORDED #'+sequence;
-    log('QUEST /events test '+(result.duplicate?'duplicate':'accepted')+' sequence '+sequence,'SYSTEM');
+    const result=await postAuthoritativeEvent(proposal);
+    showQuestResult(result);
   }catch(error){
-    status.innerText='QUEST EVENT FAILED';
-    button.innerText='RETRY QUEST EVENT TEST';
-    button.disabled=false;
-    log('QUEST /events test failed: '+error,'SYSTEM');
+    try{
+      await queueEvent(proposal);
+      status.innerText='QUEUED OFFLINE • WAITING FOR WI-FI';
+      button.innerText='QUEST EVENT QUEUED';
+      button.disabled=false;
+      log('QUEST event queued offline: '+proposal.eventId,'SYSTEM');
+    }catch(queueError){
+      status.innerText='QUEUE FAILED';
+      button.innerText='RETRY OFFLINE QUEUE TEST';
+      button.disabled=false;
+      log('QUEST event and queue failed: '+queueError,'SYSTEM');
+    }
   }
 };
+window.addEventListener('online',flushEventOutbox);
+setInterval(flushEventOutbox,3000);
+setTimeout(flushEventOutbox,600);
 </script>
 </body></html>
