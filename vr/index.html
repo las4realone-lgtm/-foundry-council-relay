@@ -658,7 +658,7 @@ function showQuestResult(result,prefix='QUEST'){
   log(prefix+' /events '+(result.duplicate?'duplicate':'accepted')+' sequence '+sequence,'SYSTEM');
 }
 async function flushEventOutbox(){
-  if(!navigator.onLine)return;
+  // Quest Browser can keep navigator.onLine stale after Wi-Fi returns; a real fetch is the authority.
   const pending=(await queuedEvents()).sort((a,b)=>String(a.createdAt).localeCompare(String(b.createdAt)));
   for(const proposal of pending){
     try{
