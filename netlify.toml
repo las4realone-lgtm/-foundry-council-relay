@@ -10,3 +10,17 @@
   from = "/vr/*"
   to = "/vr/index.html"
   status = 200
+
+[[headers]]
+  for = "/vr/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
+  for = "/relay/*"
+  [headers.values]
+    Cache-Control = "no-store, no-cache, must-revalidate, max-age=0"
+    Pragma = "no-cache"
+    Expires = "0"
