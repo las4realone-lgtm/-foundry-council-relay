@@ -69,6 +69,7 @@ input[type=text]{padding:6px;border-radius:6px;border:1px solid #444;background:
 <div id="wristStatus" style="font-size:10px;margin-top:4px;opacity:0.8">Flat: POINT 2 + PLACE</div>
 <button id="wristAutoBtn">POINT 2 Veyra + PLACE</button>
 <button id="enterVRInfo" style="background:#ffaa33;color:#000;margin-top:4px">ENTER VR info</button>
+<button id="questEventTestBtn" style="background:#ffd166;color:#000;margin-top:4px">QUEST EVENT TEST → /events</button>
 </div>
 
 <div id="bigView"><button class="close" onclick="document.getElementById('bigView').classList.remove('on')">CLOSE X</button><img id="bigImg"><div class="bigTxt" id="bigTxt"></div><div style="margin-top:10px;display:flex;gap:8px"><button class="btn big" id="bigPointBtn">👆 GRANDMA POINTS THIS</button><span id="bigLamport" class="badge">Lamport</span></div></div>
@@ -610,5 +611,38 @@ setInterval(bridgePull,2000);
 // Controller triggers now ray-select; POINT 2 / PLACE only fires when the visible wrist button is deliberately selected.
 
 log('V6-A v3.4 SAFE-TALK V3.4 SAFE-TALK TAURI-READY GRANDMA BIG VIEW TURN 1-2-3-4-5-6-1 — Turn by turn — Full council 4 chairs + book + picture law — drag to look, scroll zoom, WASD, BIND button — file:// friendly — no restriction — picture law active','SYSTEM');
+
+
+// TEMPORARY QUEST-ORIGIN EVENT TEST — isolated from /state and the production VR ledger.
+document.getElementById('questEventTestBtn').onclick=async()=>{
+  const button=document.getElementById('questEventTestBtn');
+  const status=document.getElementById('wristStatus');
+  button.disabled=true;
+  status.innerText='QUEST EVENT TEST: sending…';
+  const proposal={
+    sessionId:'baseline-102-test',
+    eventId:'baseline-102-test-quest-0005',
+    clientId:'quest-headset-test',
+    type:'POINT',
+    clientLamport:4,
+    createdAt:new Date().toISOString(),
+    payloadHash:'sha256:bdd471256ce126ae9a48c29a2e5149f7c7b5147838508eaa4f8194f53a24222c',
+    payload:{from:'quest-headset',to:'desktop',note:'Quest-originated authoritative event test'}
+  };
+  try{
+    const response=await fetch('/.netlify/functions/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(proposal)});
+    const result=await response.json();
+    if(!response.ok||!result.ok)throw new Error(result.error||('HTTP '+response.status));
+    const sequence=result.event?.serverSequence??result.session?.serverSequence;
+    status.innerText=(result.duplicate?'QUEST DUPLICATE #':'QUEST ACCEPTED #')+sequence;
+    button.innerText='QUEST EVENT RECORDED #'+sequence;
+    log('QUEST /events test '+(result.duplicate?'duplicate':'accepted')+' sequence '+sequence,'SYSTEM');
+  }catch(error){
+    status.innerText='QUEST EVENT FAILED';
+    button.innerText='RETRY QUEST EVENT TEST';
+    button.disabled=false;
+    log('QUEST /events test failed: '+error,'SYSTEM');
+  }
+};
 </script>
 </body></html>
