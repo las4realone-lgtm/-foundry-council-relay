@@ -308,9 +308,9 @@ const bayLeftWall=new THREE.Mesh(new THREE.BoxGeometry(0.55,7.4,8.2),bayStone);b
 const bayRightWall=bayLeftWall.clone();bayRightWall.position.x=3.05;bayGroup.add(bayRightWall);
 const bayCeiling=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.45,8.2),bayStone);bayCeiling.position.set(0,6.78,20.35);bayGroup.add(bayCeiling);
 const bayFloor=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.16,8.2),bayFloorMaterial);bayFloor.position.set(0,-0.50,20.35);bayGroup.add(bayFloor);
-const bayEndLeft=new THREE.Mesh(new THREE.BoxGeometry(1.55,7.4,0.48),bayStone);bayEndLeft.position.set(-2.55,3.1,24.45);bayGroup.add(bayEndLeft);
-const bayEndRight=bayEndLeft.clone();bayEndRight.position.x=2.55;bayGroup.add(bayEndRight);
-const bayEndLintel=new THREE.Mesh(new THREE.BoxGeometry(3.55,2.3,0.48),bayStone);bayEndLintel.position.set(0,5.65,24.45);bayGroup.add(bayEndLintel);
+const bayEndLeft=new THREE.Mesh(new THREE.BoxGeometry(1.08,7.4,0.48),bayStone);bayEndLeft.position.set(-2.79,3.1,24.45);bayGroup.add(bayEndLeft);
+const bayEndRight=bayEndLeft.clone();bayEndRight.position.x=2.79;bayGroup.add(bayEndRight);
+const bayEndLintel=new THREE.Mesh(new THREE.BoxGeometry(4.50,2.3,0.48),bayStone);bayEndLintel.position.set(0,5.65,24.45);bayGroup.add(bayEndLintel);
 
 // Entrance piers and a pointed lintel turn the old flat rear marker into physical architecture.
 for(const x of [-3.05,3.05]){
@@ -367,6 +367,10 @@ function addHallPier(x,z){
   const base=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.92,0.42,10),pillarCapital);base.position.set(x,-0.26,z);hallGroup.add(base);
   const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.52,0.52,10),pillarCapital);cap.position.set(x,9.43,z);hallGroup.add(cap);
   const band=new THREE.Mesh(new THREE.TorusGeometry(0.61,0.045,6,18),hallWarm);band.rotation.x=Math.PI/2;band.position.set(x,1.0,z);hallGroup.add(band);
+  const edgeStrip=new THREE.Mesh(new THREE.BoxGeometry(0.075,8.2,0.12),hallWarm);
+  edgeStrip.position.set(x+(x<0?0.49:-0.49),4.65,z-0.34);hallGroup.add(edgeStrip);
+  const upperBand=new THREE.Mesh(new THREE.TorusGeometry(0.58,0.032,6,18),hallWarm);
+  upperBand.rotation.x=Math.PI/2;upperBand.position.set(x,8.55,z);hallGroup.add(upperBand);
 }
 for(const z of [27.2,31.2,35.2,39.2]){
   addHallPier(-5.45,z);addHallPier(5.45,z);
@@ -382,8 +386,18 @@ const landmarkSpine=new THREE.Mesh(new THREE.OctahedronGeometry(0.58,0),hallBlue
 const landmarkPlinth=new THREE.Mesh(new THREE.CylinderGeometry(2.45,2.85,0.42,16),hallStone);landmarkPlinth.position.set(0,-0.27,40.4);hallGroup.add(landmarkPlinth);
 
 // Two restrained orientation lights reveal structure without flattening the darkness.
-const hallEntryLight=new THREE.PointLight(0xffb36b,0.82,10,2);hallEntryLight.position.set(0,4.0,27.0);hallEntryLight.castShadow=false;hallGroup.add(hallEntryLight);
-const hallLandmarkLight=new THREE.PointLight(0x62cde5,0.92,12,2);hallLandmarkLight.position.set(0,4.5,38.8);hallLandmarkLight.castShadow=false;hallGroup.add(hallLandmarkLight);
+const hallEntryLight=new THREE.PointLight(0xffb36b,1.12,12,2);hallEntryLight.position.set(0,4.0,27.0);hallEntryLight.castShadow=false;hallGroup.add(hallEntryLight);
+const hallLandmarkLight=new THREE.PointLight(0x62cde5,1.08,13,2);hallLandmarkLight.position.set(0,4.5,38.8);hallLandmarkLight.castShadow=false;hallGroup.add(hallLandmarkLight);
+
+// ===== BATCH 4C: HALL READABILITY — environment only =====
+// Low floor beacons establish direction while leaving the upper hall in shadow.
+for(const [z,color] of [[29.0,0xffaa55],[33.0,0xd6a45d],[37.0,0x62cde5]]){
+  for(const x of [-3.7,3.7]){
+    const beaconMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.48,roughness:0.72});
+    const beacon=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.055,0.16),beaconMat);
+    beacon.position.set(x,-0.31,z);hallGroup.add(beacon);
+  }
+}
 
 
 // Keep the proven irregular stone paving from Batch 3A.
