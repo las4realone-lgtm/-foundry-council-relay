@@ -256,6 +256,7 @@ function addGothicPillar(x,z,rotation){
   const plinth=new THREE.Mesh(new THREE.BoxGeometry(1.65,0.34,1.5),pillarStone);plinth.position.y=0.17;group.add(plinth);
   const base=new THREE.Mesh(new THREE.CylinderGeometry(0.66,0.76,0.62,12),pillarStone);base.position.y=0.65;group.add(base);
   const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.43,12.5,12),pillarStone);shaft.position.y=6.95;group.add(shaft);
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.47,0.47,0.18,12),pillarCapital);collar.position.y=4.75;group.add(collar);
   // Four narrow buttress ribs produce a Gothic profile without a heavy model.
   for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
     const rib=new THREE.Mesh(new THREE.BoxGeometry(0.16,12.3,0.20),pillarCapital);
@@ -281,18 +282,61 @@ const corniceCenter=new THREE.Mesh(new THREE.BoxGeometry(29,0.72,0.9),corniceMat
 ].forEach(([x,z,rotation])=>{
   const beam=new THREE.Mesh(new THREE.BoxGeometry(17,0.64,0.78),corniceMaterial);
   beam.position.set(x,13.25,z);beam.rotation.y=rotation;scene.add(beam);
+  const trim=new THREE.Mesh(new THREE.BoxGeometry(16.6,0.10,0.86),pillarCapital);trim.position.y=-0.34;beam.add(trim);
 });
 // Two shared lights keep the warm structure legible without twelve costly dynamic lights.
 const pillarWarmLeft=new THREE.PointLight(0xffaa55,0.72,11,2);pillarWarmLeft.position.set(-13,6,-16);scene.add(pillarWarmLeft);
 const pillarWarmRight=new THREE.PointLight(0xffaa55,0.72,11,2);pillarWarmRight.position.set(13,6,-16);scene.add(pillarWarmRight);
 
-// Neutral rear enclosure remains quiet and leaves room for future physical entrances.
+// ===== BATCH 4A: FIRST PHYSICAL LIBRARY BAY — environment only =====
+// The rear enclosure is now segmented around a true opening, not a doorway painted on a wall.
 const shellRearMaterial=new THREE.MeshStandardMaterial({color:0x25302c,roughness:0.92,metalness:0.02});
-const shellRearWall=new THREE.Mesh(new THREE.BoxGeometry(34,12,0.8),shellRearMaterial);shellRearWall.position.set(0,5.2,16.5);scene.add(shellRearWall);
+const shellRearWallLeft=new THREE.Mesh(new THREE.BoxGeometry(14.3,12,0.8),shellRearMaterial);shellRearWallLeft.position.set(-9.85,5.2,16.5);scene.add(shellRearWallLeft);
+const shellRearWallRight=shellRearWallLeft.clone();shellRearWallRight.position.x=9.85;scene.add(shellRearWallRight);
+const shellRearLintel=new THREE.Mesh(new THREE.BoxGeometry(5.4,4.2,0.8),shellRearMaterial);shellRearLintel.position.set(0,9.1,16.5);scene.add(shellRearLintel);
 const shellRearLeft=new THREE.Mesh(new THREE.BoxGeometry(0.55,12,22),shellRearMaterial);shellRearLeft.position.set(-16.7,5.2,5.8);scene.add(shellRearLeft);
 const shellRearRight=shellRearLeft.clone();shellRearRight.position.x=16.7;scene.add(shellRearRight);
-const rearArchMat=new THREE.MeshStandardMaterial({color:0x111a1b,roughness:1});
-const shellRearDoor=new THREE.Mesh(new THREE.PlaneGeometry(5.2,7.0),rearArchMat);shellRearDoor.position.set(0,2.5,16.05);shellRearDoor.rotation.y=Math.PI;scene.add(shellRearDoor);
+
+const bayGroup=new THREE.Group();bayGroup.position.set(0,0,0);scene.add(bayGroup);
+const bayStone=new THREE.MeshStandardMaterial({color:0x2d3934,roughness:0.94,metalness:0.01});
+const bayTrim=new THREE.MeshStandardMaterial({color:0x3b4942,roughness:0.86,metalness:0.03});
+const bayFloorMaterial=new THREE.MeshStandardMaterial({color:0x33433c,roughness:0.9,metalness:0.01});
+const bayShadow=new THREE.MeshStandardMaterial({color:0x090f0d,roughness:1,emissive:0x111a17,emissiveIntensity:0.12});
+
+// A short, navigable stone volume proves opening, threshold, depth and lighting before corridors multiply.
+const bayLeftWall=new THREE.Mesh(new THREE.BoxGeometry(0.55,7.4,8.2),bayStone);bayLeftWall.position.set(-3.05,3.1,20.35);bayGroup.add(bayLeftWall);
+const bayRightWall=bayLeftWall.clone();bayRightWall.position.x=3.05;bayGroup.add(bayRightWall);
+const bayCeiling=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.45,8.2),bayStone);bayCeiling.position.set(0,6.78,20.35);bayGroup.add(bayCeiling);
+const bayFloor=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.16,8.2),bayFloorMaterial);bayFloor.position.set(0,-0.50,20.35);bayGroup.add(bayFloor);
+const bayEndWall=new THREE.Mesh(new THREE.BoxGeometry(6.65,7.4,0.48),bayStone);bayEndWall.position.set(0,3.1,24.45);bayGroup.add(bayEndWall);
+const bayEndRecess=new THREE.Mesh(new THREE.PlaneGeometry(3.4,4.8),bayShadow);bayEndRecess.position.set(0,2.35,24.19);bayEndRecess.rotation.y=Math.PI;bayGroup.add(bayEndRecess);
+
+// Entrance piers and a pointed lintel turn the old flat rear marker into physical architecture.
+for(const x of [-3.05,3.05]){
+  const pier=new THREE.Mesh(new THREE.BoxGeometry(0.82,7.8,1.05),pillarStone);pier.position.set(x,3.3,16.18);bayGroup.add(pier);
+  const foot=new THREE.Mesh(new THREE.BoxGeometry(1.18,0.36,1.38),pillarCapital);foot.position.set(x,-0.40,16.18);bayGroup.add(foot);
+  const cap=new THREE.Mesh(new THREE.BoxGeometry(1.16,0.34,1.32),pillarCapital);cap.position.set(x,7.05,16.18);bayGroup.add(cap);
+}
+const bayArchLeft=new THREE.Mesh(new THREE.BoxGeometry(3.9,0.38,0.86),bayTrim);bayArchLeft.position.set(-1.45,7.55,16.22);bayArchLeft.rotation.z=-0.54;bayGroup.add(bayArchLeft);
+const bayArchRight=bayArchLeft.clone();bayArchRight.position.x=1.45;bayArchRight.rotation.z=0.54;bayGroup.add(bayArchRight);
+
+// Three threshold stones make entry depth readable without introducing collision logic.
+[-0.45,0,0.45].forEach((offset,index)=>{
+  const threshold=new THREE.Mesh(new THREE.BoxGeometry(6.25-index*0.22,0.13,0.42),bayTrim);
+  threshold.position.set(0,-0.43,15.78+offset);bayGroup.add(threshold);
+});
+// Sparse inner ribs and one restrained light imply a future room while preserving Quest performance.
+for(const z of [18.0,21.0,23.7]){
+  const ribLeft=new THREE.Mesh(new THREE.BoxGeometry(0.18,6.5,0.32),bayTrim);ribLeft.position.set(-2.72,2.75,z);bayGroup.add(ribLeft);
+  const ribRight=ribLeft.clone();ribRight.position.x=2.72;bayGroup.add(ribRight);
+}
+const bayWarmLight=new THREE.PointLight(0xffb36b,1.05,9,2);bayWarmLight.position.set(0,3.6,20.4);bayWarmLight.castShadow=false;bayGroup.add(bayWarmLight);
+const bayEndGlow=new THREE.Mesh(new THREE.CircleGeometry(0.34,16),new THREE.MeshBasicMaterial({color:0xffc57c,transparent:true,opacity:0.45,depthWrite:false}));
+bayEndGlow.position.set(0,4.55,24.15);bayEndGlow.rotation.y=Math.PI;bayGroup.add(bayEndGlow);
+
+// Rear cornice closes the chamber envelope while leaving the new bay visibly distinct.
+const rearCorniceLeft=new THREE.Mesh(new THREE.BoxGeometry(14.4,0.64,0.82),corniceMaterial);rearCorniceLeft.position.set(-9.85,10.95,16.08);scene.add(rearCorniceLeft);
+const rearCorniceRight=rearCorniceLeft.clone();rearCorniceRight.position.x=9.85;scene.add(rearCorniceRight);
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
