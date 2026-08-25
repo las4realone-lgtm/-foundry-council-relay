@@ -699,7 +699,7 @@ function showQuestResult(result,prefix='QUEST'){
   const sequence=result.event?.serverSequence??result.session?.serverSequence;
   document.getElementById('wristStatus').innerText=(result.duplicate?prefix+' DUPLICATE #':prefix+' ACCEPTED #')+sequence;
   const button=document.getElementById('questEventTestBtn');
-  button.innerText='QUEST EVENT RECORDED #'+sequence;
+  button.innerText='NEW QUEST TEST • LAST #'+sequence;
   button.disabled=false;
   log(prefix+' /events '+(result.duplicate?'duplicate':'accepted')+' sequence '+sequence,'SYSTEM');
 }
@@ -725,7 +725,7 @@ async function flushEventOutbox(){
   }
   await updateOutboxUi();
 }
-document.getElementById('questEventTestBtn').innerText='OFFLINE QUEUE TEST → /events';
+document.getElementById('questEventTestBtn').innerText='NEW QUEST EVENT TEST → /events';
 document.getElementById('questEventTestBtn').onclick=async()=>{
   const button=document.getElementById('questEventTestBtn');
   const status=document.getElementById('wristStatus');
@@ -735,12 +735,16 @@ document.getElementById('questEventTestBtn').onclick=async()=>{
   const payloadBytes=new TextEncoder().encode(JSON.stringify(payload));
   const digest=await crypto.subtle.digest('SHA-256',payloadBytes);
   const payloadHash='sha256:'+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+  const eventNonce=Date.now().toString(36)+'-'+Array.from(crypto.getRandomValues(new Uint8Array(4)),byte=>byte.toString(16).padStart(2,'0')).join('');
+  const clientLamportKey='foundry-authoritative-client-lamport';
+  const nextClientLamport=Number(localStorage.getItem(clientLamportKey)||6);
+  localStorage.setItem(clientLamportKey,String(nextClientLamport+1));
   const proposal={
     sessionId:'baseline-102-test',
-    eventId:'baseline-102-test-quest-offline-0006',
+    eventId:'baseline-102-test-quest-'+eventNonce,
     clientId:'quest-headset-test',
     type:'POINT',
-    clientLamport:5,
+    clientLamport:nextClientLamport,
     createdAt:new Date().toISOString(),
     payloadHash,
     payload
