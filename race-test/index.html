@@ -50,9 +50,9 @@ small{color:#9bb0ba}@media(max-width:600px){.grid{grid-template-columns:1fr}h1{f
 <div>HTTP: <span id="httpView" class="value">—</span></div>
 <div>Request ID: <span id="requestView" class="value">—</span></div>
 <div>Server sequence: <span id="sequenceView" class="value">—</span></div>
-<div>Pair delta: <span id="deltaView" class="value">waiting for both devices</span></div>
+<div>Client-reported dispatch: <span id="deltaView" class="value">waiting for both devices</span></div><div>Server order: <span id="orderView" class="value">waiting for both devices</span></div><div>Server timestamp diagnostic: <span id="serverDeltaView" class="value">not comparable across instances</span></div>
 </div>
-<button id="refresh" style="width:100%;margin-top:12px">REFRESH ROUND RESULT</button>
+<p><small>Client dispatch uses each device clock and is reported separately. Server wall-clock timestamps from different serverless instances are diagnostic only; authoritative evidence is acceptance plus ordered serverSequence values.</small></p><button id="refresh" style="width:100%;margin-top:12px">REFRESH ROUND RESULT</button>
 <pre id="log">Ready.</pre>
 </div>
 </main>
@@ -150,12 +150,20 @@ async function readPair(){
   var desktop=pair.find(function(e){return e.clientId==="physical-desktop"});
   var quest=pair.find(function(e){return e.clientId==="physical-quest"});
   if(desktop&&quest){
-    var delta=Math.abs(Date.parse(desktop.serverReceivedAt)-Date.parse(quest.serverReceivedAt));
-    el("deltaView").textContent=delta+" ms — "+(delta<=200?"PASS":"OUTSIDE 200 ms");
-    el("deltaView").className=delta<=200?"value good":"value bad";
-    el("status").textContent="ROUND "+round+" COMPLETE";
-    el("status").className="status "+(delta<=200?"good":"bad");
-    log({round:round,deltaMs:delta,desktop:desktop,quest:quest,serverSequence:data.session.serverSequence});
+    var clientDelta=Math.abs(Date.parse(desktop.createdAt)-Date.parse(quest.createdAt));
+    var serverDelta=Math.abs(Date.parse(desktop.serverReceivedAt)-Date.parse(quest.serverReceivedAt));
+    var accepted=desktop.status==="ACCEPTED"&&quest.status==="ACCEPTED";
+    var contiguous=Math.abs(desktop.serverSequence-quest.serverSequence)===1;
+    var transportPass=accepted&&contiguous;
+    el("deltaView").textContent=clientDelta+" ms — CLIENT-REPORTED "+(clientDelta<=200?"WITHIN 200 ms":"OUTSIDE 200 ms");
+    el("deltaView").className=clientDelta<=200?"value good":"value bad";
+    el("orderView").textContent=transportPass?"PASS — accepted, contiguous sequences":"FAIL — inspect events";
+    el("orderView").className=transportPass?"value good":"value bad";
+    el("serverDeltaView").textContent=serverDelta+" ms — DIAGNOSTIC ONLY, NOT A LATENCY VERDICT";
+    el("serverDeltaView").className="value";
+    el("status").textContent="ROUND "+round+" COMPLETE — "+(transportPass?"TRANSPORT PASS":"TRANSPORT FAIL");
+    el("status").className="status "+(transportPass?"good":"bad");
+    log({round:round,clientReportedDispatchDeltaMs:clientDelta,clientClockBoundary:"Depends on each device wall clock; not an authoritative latency measurement",transportPass:transportPass,accepted:accepted,contiguousServerSequences:contiguous,serverTimestampDeltaMs:serverDelta,serverTimestampBoundary:"Diagnostic only; timestamps from separate serverless instances are not comparable for latency",desktop:desktop,quest:quest,serverSequence:data.session.serverSequence});
     return true;
   }
   el("deltaView").textContent="waiting — "+pair.length+"/2 events present";
