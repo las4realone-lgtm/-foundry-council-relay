@@ -40,6 +40,7 @@ small{color:#9bb0ba}@media(max-width:600px){.grid{grid-template-columns:1fr}h1{f
 <div>Target UTC: <span id="targetView" class="value">—</span></div>
 <div>Countdown: <span id="countView" class="value">—</span></div>
 <div>Local send: <span id="sendView" class="value">—</span></div>
+          <div>Pending queue: <span id="pendingView" class="value">0</span></div>
 </div>
 <p><small>After both devices are armed, confirm that both show the exact same Target UTC. If not, cancel and arm both again.</small></p>
 </div>
@@ -66,6 +67,90 @@ var timer=null;
 var sent=false;
 var el=function(id){return document.getElementById(id)};
 var log=function(v){el("log").textContent=typeof v==="string"?v:JSON.stringify(v,null,2)};
+var queueDbPromise=null;
+var flushing=false;
+function queueDb(){
+  if(queueDbPromise)return queueDbPromise;
+  queueDbPromise=new Promise(function(resolve,reject){
+    var request=indexedDB.open("foundry-race-queue-v1",1);
+    request.onupgradeneeded=function(){var db=request.result;if(!db.objectStoreNames.contains("pending"))db.createObjectStore("pending",{keyPath:"eventId"})};
+    request.onsuccess=function(){resolve(request.result)};
+    request.onerror=function(){reject(request.error)};
+  });
+  return queueDbPromise;
+}
+async function queuePut(proposal){
+  var db=await queueDb();
+  return new Promise(function(resolve,reject){
+    var request=db.transaction("pending","readwrite").objectStore("pending").put(proposal);
+    request.onsuccess=function(){resolve()};
+    request.onerror=function(){reject(request.error)};
+  });
+}
+async function queueDelete(eventId){
+  var db=await queueDb();
+  return new Promise(function(resolve,reject){
+    var request=db.transaction("pending","readwrite").objectStore("pending").delete(eventId);
+    request.onsuccess=function(){resolve()};
+    request.onerror=function(){reject(request.error)};
+  });
+}
+async function queueAll(){
+  var db=await queueDb();
+  return new Promise(function(resolve,reject){
+    var request=db.transaction("pending","readonly").objectStore("pending").getAll();
+    request.onsuccess=function(){resolve(request.result||[])};
+    request.onerror=function(){reject(request.error)};
+  });
+}
+async function updatePending(){
+  var count=(await queueAll()).length;
+  el("pendingView").textContent=String(count);
+  el("pendingView").className=count?"value bad":"value good";
+  return count;
+}
+async function sendProposal(proposal,fromQueue){
+  try{
+    var response=await fetch(endpoint,{method:"POST",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify(proposal)});
+    var data=await response.json();
+    el("httpView").textContent=response.status;
+    el("requestView").textContent=response.headers.get("x-nf-request-id")||"not exposed";
+    el("sequenceView").textContent=data.event?data.event.serverSequence:"—";
+    if(!response.ok||!data.ok){var rejected=new Error(data.error||("HTTP "+response.status));rejected.serverRejected=true;throw rejected;}
+    await queueDelete(proposal.eventId);
+    await updatePending();
+    el("status").textContent=fromQueue?"RECOVERED — ACCEPTED, PENDING 0":"ACCEPTED — waiting for pair";
+    el("status").className="status good";
+    log({proposal:proposal,response:data,recovered:fromQueue});
+    pollPair(15).catch(function(e){log("PAIR POLL ERROR: "+e)});
+    return true;
+  }catch(error){
+    if(error&&(error.serverRejected||/^HTTP /.test(error.message||""))){
+      el("status").textContent="SERVER REJECTED: "+error.message;
+      el("status").className="status bad";
+      log(String(error));
+      return false;
+    }
+    await queuePut(proposal);
+    var pending=await updatePending();
+    el("status").textContent="OFFLINE — QUEUED, PENDING "+pending;
+    el("status").className="status bad";
+    log({queued:true,eventId:proposal.eventId,error:String(error)});
+    return false;
+  }
+}
+async function flushQueue(){
+  if(flushing||!navigator.onLine)return;
+  flushing=true;
+  try{
+    var pending=await queueAll();
+    for(var i=0;i<pending.length;i++){
+      if(!navigator.onLine)break;
+      var sentOk=await sendProposal(pending[i],true);
+      if(!sentOk)break;
+    }
+  }finally{flushing=false;await updatePending()}
+}
 
 function canonical(value){
   if(value===null||typeof value!=="object")return JSON.stringify(value);
@@ -124,20 +209,7 @@ async function submit(){
     payloadHash:await hashPayload(payload),
     payload:payload
   };
-  try{
-    var response=await fetch(endpoint,{method:"POST",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify(proposal)});
-    var data=await response.json();
-    el("httpView").textContent=response.status;
-    el("requestView").textContent=response.headers.get("x-nf-request-id")||"not exposed";
-    el("sequenceView").textContent=data.event?data.event.serverSequence:"—";
-    el("status").textContent=data.ok?"ACCEPTED — waiting for pair":"FAILED";
-    el("status").className="status "+(data.ok?"good":"bad");
-    log({proposal:proposal,response:data});
-    await pollPair(15);
-  }catch(error){
-    el("status").textContent="NETWORK ERROR: "+error.message;
-    el("status").className="status bad";log(String(error));
-  }
+  await sendProposal(proposal,false);
 }
 async function readPair(){
   var sessionId=el("session").value.trim();
@@ -178,5 +250,8 @@ el("arm").onclick=arm;
 el("cancel").onclick=clearTimer;
 el("refresh").onclick=function(){readPair().catch(function(e){log(String(e))})};
 var saved=localStorage.getItem("foundry-race-role");if(saved==="desktop"||saved==="quest")choose(saved);
+window.addEventListener("online",function(){flushQueue()});
+setInterval(function(){if(navigator.onLine)flushQueue()},3000);
+updatePending().then(function(){if(navigator.onLine)flushQueue()}).catch(function(e){log("QUEUE ERROR: "+e)});
 })();
 </script></body></html>
