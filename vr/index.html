@@ -669,7 +669,22 @@ async function updateOutboxUi(){
   syncButton.style.background=pending.length?'#ff9f1c':'#6b8e23';
   return pending.length;
 }
+function canonicalJson(value){
+  if(Array.isArray(value))return '['+value.map(canonicalJson).join(',')+']';
+  if(value&&typeof value==='object'){
+    return '{'+Object.keys(value).sort().map(key=>JSON.stringify(key)+':'+canonicalJson(value[key])).join(',')+'}';
+  }
+  return JSON.stringify(value);
+}
+async function canonicalPayloadHash(payload){
+  const bytes=new TextEncoder().encode(canonicalJson(payload));
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return 'sha256:'+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+}
 async function postAuthoritativeEvent(proposal){
+  // The server hashes canonical JSON with recursively sorted object keys.
+  // Recompute immediately before every POST so older queued proposals can recover too.
+  proposal.payloadHash=await canonicalPayloadHash(proposal.payload);
   const response=await fetch('/.netlify/functions/events',{
     method:'POST',
     cache:'no-store',
