@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Foundry Physical Race Test</title>
+<style>
+:root{color-scheme:dark;--cyan:#69e7ff;--gold:#ffd166;--green:#67f29a;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:#071018;color:#e9f3f5;font:16px ui-monospace,Consolas,monospace}
+main{max-width:850px;margin:auto;padding:18px}.card{background:#0d1b26;border:1px solid #315367;border-radius:14px;padding:16px;margin:12px 0}
+h1{color:var(--cyan);font-size:24px}.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,input{font:inherit;border-radius:10px;padding:14px;border:1px solid #537080;background:#102735;color:white}
+button{cursor:pointer;font-weight:700}.role.active{background:var(--cyan);color:#001018}.arm{width:100%;background:var(--gold);color:#161000;font-size:20px}
+.cancel{width:100%;margin-top:8px}.status{font-size:20px;color:var(--gold);min-height:60px}.good{color:var(--green)}.bad{color:var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.value{color:var(--cyan);overflow-wrap:anywhere}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#050b10;padding:12px;border-radius:10px;max-height:280px;overflow:auto}
+small{color:#9bb0ba}@media(max-width:600px){.grid{grid-template-columns:1fr}h1{font-size:20px}}
+</style>
+</head>
+<body><main>
+<h1>Foundry Physical Desktop ↔ Quest Race Test</h1>
+<div class="card">
+<p>This page is separate from the frozen VR application. Use the same session, round, and target time on both devices.</p>
+<div class="roles">
+<button id="desktop" class="role">DESKTOP</button>
+<button id="quest" class="role">QUEST</button>
+</div>
+<div class="grid" style="margin-top:10px">
+<label>Session<input id="session" value="physical-race-20260824"></label>
+<label>Round (1–20)<input id="round" type="number" min="1" max="20" value="1"></label>
+</div>
+</div>
+
+<div class="card">
+<button id="arm" class="arm" disabled>SELECT A ROLE</button>
+<button id="cancel" class="cancel" disabled>CANCEL / RE-ARM</button>
+<p id="status" class="status">Not armed.</p>
+<div class="grid">
+<div>Role: <span id="roleView" class="value">—</span></div>
+<div>Target UTC: <span id="targetView" class="value">—</span></div>
+<div>Countdown: <span id="countView" class="value">—</span></div>
+<div>Local send: <span id="sendView" class="value">—</span></div>
+</div>
+<p><small>After both devices are armed, confirm that both show the exact same Target UTC. If not, cancel and arm both again.</small></p>
+</div>
+
+<div class="card">
+<h2>Authoritative result</h2>
+<div class="grid">
+<div>HTTP: <span id="httpView" class="value">—</span></div>
+<div>Request ID: <span id="requestView" class="value">—</span></div>
+<div>Server sequence: <span id="sequenceView" class="value">—</span></div>
+<div>Pair delta: <span id="deltaView" class="value">waiting for both devices</span></div>
+</div>
+<button id="refresh" style="width:100%;margin-top:12px">REFRESH ROUND RESULT</button>
+<pre id="log">Ready.</pre>
+</div>
+</main>
+<script>
+(function(){
+"use strict";
+var endpoint="/.netlify/functions/events";
+var role="";
+var target=0;
+var timer=null;
+var sent=false;
+var el=function(id){return document.getElementById(id)};
+var log=function(v){el("log").textContent=typeof v==="string"?v:JSON.stringify(v,null,2)};
+
+function canonical(value){
+  if(value===null||typeof value!=="object")return JSON.stringify(value);
+  if(Array.isArray(value))return "["+value.map(canonical).join(",")+"]";
+  return "{"+Object.keys(value).sort().map(function(k){return JSON.stringify(k)+":"+canonical(value[k])}).join(",")+"}";
+}
+async function hashPayload(payload){
+  var bytes=new TextEncoder().encode(canonical(payload));
+  var digest=await crypto.subtle.digest("SHA-256",bytes);
+  return "sha256:"+Array.from(new Uint8Array(digest)).map(function(b){return b.toString(16).padStart(2,"0")}).join("");
+}
+function choose(next){
+  role=next;
+  localStorage.setItem("foundry-race-role",role);
+  el("desktop").classList.toggle("active",role==="desktop");
+  el("quest").classList.toggle("active",role==="quest");
+  el("roleView").textContent=role.toUpperCase();
+  el("arm").disabled=false;
+  el("arm").textContent="ARM "+role.toUpperCase()+" FOR NEXT SLOT";
+}
+function clearTimer(){
+  if(timer)clearInterval(timer);
+  timer=null;target=0;sent=false;
+  el("targetView").textContent="—";el("countView").textContent="—";
+  el("status").textContent="Not armed.";
+  el("arm").disabled=!role;el("cancel").disabled=true;
+}
+function arm(){
+  var now=Date.now();
+  target=Math.ceil((now+10000)/30000)*30000;
+  sent=false;
+  el("targetView").textContent=new Date(target).toISOString();
+  el("status").textContent="ARMED — arm the other device for this same UTC slot.";
+  el("arm").disabled=true;el("cancel").disabled=false;
+  timer=setInterval(tick,50);tick();
+}
+function tick(){
+  var left=target-Date.now();
+  el("countView").textContent=(left/1000).toFixed(2)+" s";
+  if(left<=0&&!sent){sent=true;clearInterval(timer);timer=null;submit();}
+}
+async function submit(){
+  var sessionId=el("session").value.trim();
+  var round=Number(el("round").value);
+  var sentAt=new Date().toISOString();
+  el("sendView").textContent=sentAt;
+  el("status").textContent="SENDING…";
+  var payload={from:role,note:"Physical Desktop-Quest race",round:round,targetAt:new Date(target).toISOString(),to:"race-audit"};
+  var proposal={
+    sessionId:sessionId,
+    eventId:sessionId+"-r"+String(round).padStart(2,"0")+"-"+role+"-"+target,
+    clientId:"physical-"+role,
+    type:role==="desktop"?"POINT":"TURN_ADVANCE",
+    clientLamport:round,
+    createdAt:sentAt,
+    payloadHash:await hashPayload(payload),
+    payload:payload
+  };
+  try{
+    var response=await fetch(endpoint,{method:"POST",cache:"no-store",headers:{"content-type":"application/json"},body:JSON.stringify(proposal)});
+    var data=await response.json();
+    el("httpView").textContent=response.status;
+    el("requestView").textContent=response.headers.get("x-nf-request-id")||"not exposed";
+    el("sequenceView").textContent=data.event?data.event.serverSequence:"—";
+    el("status").textContent=data.ok?"ACCEPTED — waiting for pair":"FAILED";
+    el("status").className="status "+(data.ok?"good":"bad");
+    log({proposal:proposal,response:data});
+    await pollPair(15);
+  }catch(error){
+    el("status").textContent="NETWORK ERROR: "+error.message;
+    el("status").className="status bad";log(String(error));
+  }
+}
+async function readPair(){
+  var sessionId=el("session").value.trim();
+  var round=Number(el("round").value);
+  var response=await fetch(endpoint+"?sessionId="+encodeURIComponent(sessionId),{cache:"no-store"});
+  var data=await response.json();
+  var pair=(data.session&&data.session.events||[]).filter(function(e){
+    return e.payload&&e.payload.round===round&&e.payload.note==="Physical Desktop-Quest race";
+  });
+  var desktop=pair.find(function(e){return e.clientId==="physical-desktop"});
+  var quest=pair.find(function(e){return e.clientId==="physical-quest"});
+  if(desktop&&quest){
+    var delta=Math.abs(Date.parse(desktop.serverReceivedAt)-Date.parse(quest.serverReceivedAt));
+    el("deltaView").textContent=delta+" ms — "+(delta<=200?"PASS":"OUTSIDE 200 ms");
+    el("deltaView").className=delta<=200?"value good":"value bad";
+    el("status").textContent="ROUND "+round+" COMPLETE";
+    el("status").className="status "+(delta<=200?"good":"bad");
+    log({round:round,deltaMs:delta,desktop:desktop,quest:quest,serverSequence:data.session.serverSequence});
+    return true;
+  }
+  el("deltaView").textContent="waiting — "+pair.length+"/2 events present";
+  return false;
+}
+async function pollPair(tries){
+  for(var i=0;i<tries;i++){if(await readPair())return;await new Promise(function(r){setTimeout(r,1000)})}
+}
+el("desktop").onclick=function(){choose("desktop")};
+el("quest").onclick=function(){choose("quest")};
+el("arm").onclick=arm;
+el("cancel").onclick=clearTimer;
+el("refresh").onclick=function(){readPair().catch(function(e){log(String(e))})};
+var saved=localStorage.getItem("foundry-race-role");if(saved==="desktop"||saved==="quest")choose(saved);
+})();
+</script></body></html>
