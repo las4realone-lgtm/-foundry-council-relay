@@ -308,8 +308,9 @@ const bayLeftWall=new THREE.Mesh(new THREE.BoxGeometry(0.55,7.4,8.2),bayStone);b
 const bayRightWall=bayLeftWall.clone();bayRightWall.position.x=3.05;bayGroup.add(bayRightWall);
 const bayCeiling=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.45,8.2),bayStone);bayCeiling.position.set(0,6.78,20.35);bayGroup.add(bayCeiling);
 const bayFloor=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.16,8.2),bayFloorMaterial);bayFloor.position.set(0,-0.50,20.35);bayGroup.add(bayFloor);
-const bayEndWall=new THREE.Mesh(new THREE.BoxGeometry(6.65,7.4,0.48),bayStone);bayEndWall.position.set(0,3.1,24.45);bayGroup.add(bayEndWall);
-const bayEndRecess=new THREE.Mesh(new THREE.PlaneGeometry(3.4,4.8),bayShadow);bayEndRecess.position.set(0,2.35,24.19);bayEndRecess.rotation.y=Math.PI;bayGroup.add(bayEndRecess);
+const bayEndLeft=new THREE.Mesh(new THREE.BoxGeometry(1.55,7.4,0.48),bayStone);bayEndLeft.position.set(-2.55,3.1,24.45);bayGroup.add(bayEndLeft);
+const bayEndRight=bayEndLeft.clone();bayEndRight.position.x=2.55;bayGroup.add(bayEndRight);
+const bayEndLintel=new THREE.Mesh(new THREE.BoxGeometry(3.55,2.3,0.48),bayStone);bayEndLintel.position.set(0,5.65,24.45);bayGroup.add(bayEndLintel);
 
 // Entrance piers and a pointed lintel turn the old flat rear marker into physical architecture.
 for(const x of [-3.05,3.05]){
@@ -337,6 +338,53 @@ bayEndGlow.position.set(0,4.55,24.15);bayEndGlow.rotation.y=Math.PI;bayGroup.add
 // Rear cornice closes the chamber envelope while leaving the new bay visibly distinct.
 const rearCorniceLeft=new THREE.Mesh(new THREE.BoxGeometry(14.4,0.64,0.82),corniceMaterial);rearCorniceLeft.position.set(-9.85,10.95,16.08);scene.add(rearCorniceLeft);
 const rearCorniceRight=rearCorniceLeft.clone();rearCorniceRight.position.x=9.85;scene.add(rearCorniceRight);
+
+// ===== BATCH 4B: MONUMENTAL FRONT HALL SKELETON — environment only =====
+const hallGroup=new THREE.Group();scene.add(hallGroup);
+const hallStone=new THREE.MeshStandardMaterial({color:0x202b27,roughness:0.96,metalness:0.01});
+const hallEdge=new THREE.MeshStandardMaterial({color:0x405149,roughness:0.84,metalness:0.04});
+const hallWarm=new THREE.MeshStandardMaterial({color:0x51371f,emissive:0xffaa55,emissiveIntensity:0.32,roughness:0.76});
+const hallBlue=new THREE.MeshStandardMaterial({color:0x24434a,emissive:0x48cce8,emissiveIntensity:0.52,roughness:0.62});
+
+// A broad raised floor carries the eye from the first bay into a navigable monumental volume.
+const hallFloor=new THREE.Mesh(new THREE.BoxGeometry(14.5,0.22,17.0),hallStone);hallFloor.position.set(0,-0.47,32.8);hallGroup.add(hallFloor);
+for(let i=0;i<4;i++){
+  const step=new THREE.Mesh(new THREE.BoxGeometry(8.0+i*1.25,0.16,0.72),hallEdge);
+  step.position.set(0,-0.42+i*0.055,24.95+i*0.62);hallGroup.add(step);
+  const stepLine=new THREE.Mesh(new THREE.BoxGeometry(7.75+i*1.25,0.035,0.06),hallWarm);
+  stepLine.position.set(0,-0.325+i*0.055,24.62+i*0.62);hallGroup.add(stepLine);
+}
+
+// Massive side walls frame the hall while leaving the long axis open and readable.
+const hallLeftWall=new THREE.Mesh(new THREE.BoxGeometry(0.72,11.6,17.2),hallStone);hallLeftWall.position.set(-7.05,5.25,32.8);hallGroup.add(hallLeftWall);
+const hallRightWall=hallLeftWall.clone();hallRightWall.position.x=7.05;hallGroup.add(hallRightWall);
+const hallCeilingBeamLeft=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.52,17.2),hallEdge);hallCeilingBeamLeft.position.set(-5.7,10.65,32.8);hallGroup.add(hallCeilingBeamLeft);
+const hallCeilingBeamRight=hallCeilingBeamLeft.clone();hallCeilingBeamRight.position.x=5.7;hallGroup.add(hallCeilingBeamRight);
+
+// Four column pairs and pointed ribs establish scale before any decorative surface pass.
+function addHallPier(x,z){
+  const pier=new THREE.Mesh(new THREE.CylinderGeometry(0.52,0.67,9.8,10),pillarStone);pier.position.set(x,4.4,z);hallGroup.add(pier);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.92,0.42,10),pillarCapital);base.position.set(x,-0.26,z);hallGroup.add(base);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.52,0.52,10),pillarCapital);cap.position.set(x,9.43,z);hallGroup.add(cap);
+  const band=new THREE.Mesh(new THREE.TorusGeometry(0.61,0.045,6,18),hallWarm);band.rotation.x=Math.PI/2;band.position.set(x,1.0,z);hallGroup.add(band);
+}
+for(const z of [27.2,31.2,35.2,39.2]){
+  addHallPier(-5.45,z);addHallPier(5.45,z);
+  const archLeft=new THREE.Mesh(new THREE.BoxGeometry(6.65,0.34,0.38),hallEdge);archLeft.position.set(-2.5,10.55,z);archLeft.rotation.z=-0.42;hallGroup.add(archLeft);
+  const archRight=archLeft.clone();archRight.position.x=2.5;archRight.rotation.z=0.42;hallGroup.add(archRight);
+  const crossTie=new THREE.Mesh(new THREE.BoxGeometry(11.2,0.20,0.32),hallStone);crossTie.position.set(0,9.7,z);hallGroup.add(crossTie);
+}
+
+// A single distant landmark gives the hall a destination without pretending the next room is finished.
+const landmarkFrame=new THREE.Mesh(new THREE.TorusGeometry(2.15,0.15,8,36),hallBlue);landmarkFrame.position.set(0,4.25,40.7);hallGroup.add(landmarkFrame);
+const landmarkInner=new THREE.Mesh(new THREE.TorusGeometry(1.55,0.055,6,28),new THREE.MeshBasicMaterial({color:0x75dcf1,transparent:true,opacity:0.48,depthWrite:false}));landmarkInner.position.set(0,4.25,40.62);hallGroup.add(landmarkInner);
+const landmarkSpine=new THREE.Mesh(new THREE.OctahedronGeometry(0.58,0),hallBlue);landmarkSpine.scale.set(0.62,2.8,0.62);landmarkSpine.position.set(0,4.25,40.45);hallGroup.add(landmarkSpine);
+const landmarkPlinth=new THREE.Mesh(new THREE.CylinderGeometry(2.45,2.85,0.42,16),hallStone);landmarkPlinth.position.set(0,-0.27,40.4);hallGroup.add(landmarkPlinth);
+
+// Two restrained orientation lights reveal structure without flattening the darkness.
+const hallEntryLight=new THREE.PointLight(0xffb36b,0.82,10,2);hallEntryLight.position.set(0,4.0,27.0);hallEntryLight.castShadow=false;hallGroup.add(hallEntryLight);
+const hallLandmarkLight=new THREE.PointLight(0x62cde5,0.92,12,2);hallLandmarkLight.position.set(0,4.5,38.8);hallLandmarkLight.castShadow=false;hallGroup.add(hallLandmarkLight);
+
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
