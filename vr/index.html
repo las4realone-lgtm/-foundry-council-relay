@@ -127,6 +127,18 @@ const wristTex=new THREE.CanvasTexture(wristCanvas);
 const wristMat=new THREE.MeshBasicMaterial({map:wristTex, transparent:true, side:THREE.DoubleSide});
 const wristMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.11), wristMat); wristMesh.geometry.computeBoundingSphere();
 wristMesh.position.set(0.06,0.035,-0.08); wristMesh.rotation.set(-Math.PI/2.25,0,0.12);
+// Explicit enlarged button targets remove Quest CanvasTexture UV ambiguity.
+// They are invisible, double-sided, and exist only for ray intersection.
+const wristHitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide});
+function makeWristHitTarget(action,x){
+  const hit=new THREE.Mesh(new THREE.PlaneGeometry(0.13,0.052),wristHitMat);
+  hit.position.set(x,-0.018,0.004);
+  hit.userData.wristAction=action;
+  wristMesh.add(hit);
+  return hit;
+}
+const wristPointHit=makeWristHitTarget('POINT',-0.054);
+const wristPlaceHit=makeWristHitTarget('PLACE',0.054);
 wristGroup.add(wristMesh); wristGroup.visible=false;
 grip1.add(wristGroup);
 let wristVisible=false;
@@ -502,14 +514,17 @@ function selectFromController(controller){
   ray.set(xrOrigin,xrDirection);
   if(wristVisible){
     playerRig.updateMatrixWorld(true); controller.updateMatrixWorld(true); wristGroup.updateMatrixWorld(true);
-    const wristHits=ray.intersectObject(wristMesh,true);
-    if(wristHits.length){
-      const uv=wristHits[0].uv;
-      const px=uv?uv.x*512:-1;
-      const py=uv?(1-uv.y)*256:-1;
-      if(py>=140&&py<=200&&px>=20&&px<=240)wristPointOnly();
-      else if(py>=140&&py<=200&&px>=260&&px<=480)wristPlaceOnly();
-      else setWristFeedback('AIM AT BUTTON');
+    const buttonHits=ray.intersectObjects([wristPointHit,wristPlaceHit],false);
+    if(buttonHits.length){
+      const action=buttonHits[0].object.userData.wristAction;
+      if(action==='POINT')wristPointOnly();
+      else if(action==='PLACE')wristPlaceOnly();
+      return;
+    }
+    // The visible panel may be hit outside either button; this is a deliberate miss.
+    // It provides feedback but must never create a ledger event.
+    if(ray.intersectObject(wristMesh,false).length){
+      setWristFeedback('AIM AT BUTTON');
       return;
     }
   }
