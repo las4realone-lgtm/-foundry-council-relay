@@ -428,6 +428,63 @@ landmarkBeacon.position.set(0,4.25,40.54);hallGroup.add(landmarkBeacon);
 const hallMidFill=new THREE.PointLight(0x4f9eaa,0.42,10,2);
 hallMidFill.position.set(0,1.35,34.4);hallMidFill.castShadow=false;hallGroup.add(hallMidFill);
 
+// ===== BATCH 4E: FIRST DESTINATION BAY — environment only =====
+// The abstract landmark now resolves into a real navigable volume beyond the monumental hall.
+const destinationBay=new THREE.Group();scene.add(destinationBay);
+const destinationStone=new THREE.MeshStandardMaterial({color:0x26322d,roughness:0.95,metalness:0.01});
+const destinationTrim=new THREE.MeshStandardMaterial({color:0x46574f,roughness:0.84,metalness:0.04});
+const destinationFloor=new THREE.MeshStandardMaterial({color:0x30433d,roughness:0.91,metalness:0.01});
+const destinationBlue=new THREE.MeshStandardMaterial({color:0x24474f,emissive:0x55d6ed,emissiveIntensity:0.62,roughness:0.66});
+
+// A shallow landing carries the hall axis through the landmark without introducing stairs or collision traps.
+const destinationLanding=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.22,8.8),destinationFloor);
+destinationLanding.position.set(0,-0.34,45.15);destinationBay.add(destinationLanding);
+for(const x of [-2.82,2.82]){
+  const rail=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.028,7.7),x<0?hallGuideWarm:hallGuideCool);
+  rail.position.set(x,-0.215,44.85);destinationBay.add(rail);
+}
+
+// Four piers establish a true structural bay and preserve a wide, comfortable walking route through its center.
+function addDestinationPier(x,z){
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.56,0.72,8.7,10),pillarStone);
+  shaft.position.set(x,4.02,z);destinationBay.add(shaft);
+  const foot=new THREE.Mesh(new THREE.CylinderGeometry(0.86,0.96,0.38,10),pillarCapital);
+  foot.position.set(x,-0.15,z);destinationBay.add(foot);
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.86,0.58,0.48,10),pillarCapital);
+  cap.position.set(x,8.35,z);destinationBay.add(cap);
+  const warmBand=new THREE.Mesh(new THREE.TorusGeometry(0.64,0.038,6,18),hallWarm);
+  warmBand.rotation.x=Math.PI/2;warmBand.position.set(x,0.42,z);destinationBay.add(warmBand);
+}
+for(const z of [41.55,48.35]){addDestinationPier(-3.65,z);addDestinationPier(3.65,z);}
+
+// Low side walls and upper ribs imply enclosure while keeping sightlines open for Quest navigation.
+for(const x of [-4.15,4.15]){
+  const lowerWall=new THREE.Mesh(new THREE.BoxGeometry(0.48,2.2,7.3),destinationStone);
+  lowerWall.position.set(x,0.76,44.95);destinationBay.add(lowerWall);
+  const upperBeam=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.42,7.3),destinationTrim);
+  upperBeam.position.set(x,8.58,44.95);destinationBay.add(upperBeam);
+}
+for(const z of [42.0,45.0,48.0]){
+  const rib=new THREE.Mesh(new THREE.BoxGeometry(8.0,0.26,0.34),destinationTrim);
+  rib.position.set(0,8.58,z);destinationBay.add(rib);
+}
+
+// A recessed end niche provides a readable destination and leaves room for a future doorway or live Council portal.
+const destinationBack=new THREE.Mesh(new THREE.BoxGeometry(8.7,9.2,0.52),destinationStone);
+destinationBack.position.set(0,4.15,49.05);destinationBay.add(destinationBack);
+const destinationNiche=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,0.18,32,1,true,0,Math.PI),destinationTrim);
+destinationNiche.rotation.set(Math.PI/2,0,Math.PI/2);destinationNiche.position.set(0,3.65,48.73);destinationBay.add(destinationNiche);
+const destinationCore=new THREE.Mesh(new THREE.OctahedronGeometry(0.48,0),destinationBlue);
+destinationCore.scale.set(0.72,1.55,0.72);destinationCore.position.set(0,3.65,48.35);destinationBay.add(destinationCore);
+const destinationHalo=new THREE.Mesh(new THREE.RingGeometry(1.18,1.27,36),new THREE.MeshBasicMaterial({color:0x6edcf0,transparent:true,opacity:0.42,side:THREE.DoubleSide,depthWrite:false}));
+destinationHalo.position.set(0,3.65,48.48);destinationBay.add(destinationHalo);
+
+// Restrained light separates floor, pillars and destination without flattening the dark Library atmosphere.
+const destinationWarmLight=new THREE.PointLight(0xffb36b,0.68,8.5,2);
+destinationWarmLight.position.set(0,2.0,43.0);destinationWarmLight.castShadow=false;destinationBay.add(destinationWarmLight);
+const destinationCoolLight=new THREE.PointLight(0x62d7ec,0.78,8.5,2);
+destinationCoolLight.position.set(0,3.9,47.0);destinationCoolLight.castShadow=false;destinationBay.add(destinationCoolLight);
+
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
