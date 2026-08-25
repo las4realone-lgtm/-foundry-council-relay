@@ -399,6 +399,35 @@ for(const [z,color] of [[29.0,0xffaa55],[33.0,0xd6a45d],[37.0,0x62cde5]]){
   }
 }
 
+// ===== BATCH 4D: NAVIGATION READABILITY — environment only =====
+// Two restrained inlaid rails make the long axis readable while walking without lighting the whole hall.
+const hallGuideWarm=new THREE.MeshBasicMaterial({color:0xd89142,transparent:true,opacity:0.72,depthWrite:false});
+const hallGuideCool=new THREE.MeshBasicMaterial({color:0x63d9ed,transparent:true,opacity:0.68,depthWrite:false});
+for(const x of [-2.82,2.82]){
+  const warmRail=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.026,6.4),hallGuideWarm);
+  warmRail.position.set(x,-0.325,29.25);hallGroup.add(warmRail);
+  const coolRail=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.026,6.4),hallGuideCool);
+  coolRail.position.set(x,-0.325,35.65);hallGroup.add(coolRail);
+}
+
+// Low threshold lanterns identify the transition from Council chamber to monumental hall.
+for(const x of [-2.48,2.48]){
+  const lanternBase=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.23,0.58,8),hallStone);
+  lanternBase.position.set(x,-0.08,25.35);hallGroup.add(lanternBase);
+  const lanternGlow=new THREE.Mesh(new THREE.SphereGeometry(0.13,10,8),new THREE.MeshBasicMaterial({color:0xffb566}));
+  lanternGlow.position.set(x,0.28,25.35);hallGroup.add(lanternGlow);
+}
+const thresholdFill=new THREE.PointLight(0xffad5c,0.62,8.5,2);
+thresholdFill.position.set(0,1.25,25.55);thresholdFill.castShadow=false;hallGroup.add(thresholdFill);
+
+// The destination remains abstract, but now holds its silhouette from the chamber threshold.
+hallBlue.emissiveIntensity=0.92;
+landmarkInner.material.opacity=0.78;
+const landmarkBeacon=new THREE.Mesh(new THREE.RingGeometry(2.48,2.59,40),new THREE.MeshBasicMaterial({color:0x78e5f5,transparent:true,opacity:0.34,side:THREE.DoubleSide,depthWrite:false}));
+landmarkBeacon.position.set(0,4.25,40.54);hallGroup.add(landmarkBeacon);
+const hallMidFill=new THREE.PointLight(0x4f9eaa,0.42,10,2);
+hallMidFill.position.set(0,1.35,34.4);hallMidFill.castShadow=false;hallGroup.add(hallMidFill);
+
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
