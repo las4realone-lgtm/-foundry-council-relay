@@ -708,6 +708,16 @@ const fork4IDeepLight=new THREE.PointLight(0x53d9ff,0.50,5.4,2);fork4IDeepLight.
 
 
 
+// ===== BATCH 4J: DECISION JUNCTION CLEANUP — environment only =====
+// Remove legacy duplicates revealed by the Quest review; retain one cue per decision.
+endpointHalo.visible=false;branchBeacon.visible=false;turnBeacon.visible=false;turnChevron.visible=false;
+// The paired lanes already carry direction, so suppress the older center guides and second ring.
+northGuide.visible=false;westGuide.visible=false;fork4IInnerRing.visible=false;fork4IRing.material.opacity=0.48;
+// Separate the sealed-gate emblem vertically and soften it so the grille remains architecture, not a HUD.
+fork4IGateRim.position.y=3.48;fork4IGateRim.material=branchGuideCoolBright.clone();fork4IGateRim.material.opacity=0.62;
+fork4IGateDiamond.position.set(0.16,2.52,0);fork4IGateDiamond.material=branchGuideCoolBright.clone();fork4IGateDiamond.material.opacity=0.78;
+// Keep the junction readable without flooding the corridor.
+fork4IHomeLight.intensity=0.38;fork4IDeepLight.intensity=0.42;
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
