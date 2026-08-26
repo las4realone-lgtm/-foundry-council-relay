@@ -718,6 +718,56 @@ fork4IGateRim.position.y=3.48;fork4IGateRim.material=branchGuideCoolBright.clone
 fork4IGateDiamond.position.set(0.16,2.52,0);fork4IGateDiamond.material=branchGuideCoolBright.clone();fork4IGateDiamond.material.opacity=0.78;
 // Keep the junction readable without flooding the corridor.
 fork4IHomeLight.intensity=0.38;fork4IDeepLight.intensity=0.42;
+// ===== BATCH 4K: FIRST PHYSICAL BAY — environment only =====
+// Open the cyan/deeper route into one contained architectural proof bay. No interaction or sync state is touched.
+fork4IGate.visible=false;
+const bay4K=new THREE.Group();scene.add(bay4K);
+const bay4KStone=new THREE.MeshStandardMaterial({color:0x10171b,roughness:0.94,metalness:0.04});
+const bay4KTrim=new THREE.MeshStandardMaterial({color:0x26343a,roughness:0.78,metalness:0.16});
+const bay4KCool=new THREE.MeshBasicMaterial({color:0x63ddf5,transparent:true,opacity:0.72});
+const bay4KWarm=new THREE.MeshBasicMaterial({color:0xd69a43,transparent:true,opacity:0.46});
+// A slightly raised floor marks the threshold without becoming a stair obstacle.
+const bay4KFloor=new THREE.Mesh(new THREE.BoxGeometry(11.4,0.16,6.4),bay4KStone);
+bay4KFloor.position.set(-16.05,-0.50,54.55);bay4K.add(bay4KFloor);
+// The threshold reads as an opening rather than another floating symbol.
+for(const z of [51.75,57.35]){
+ const pier=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.78,6.8,10),bay4KStone);
+ pier.position.set(-10.75,2.82,z);bay4K.add(pier);
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(0.88,0.98,0.34,10),bay4KTrim);
+ base.position.set(-10.75,-0.31,z);bay4K.add(base);
+}
+const thresholdBeam=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.52,6.25),bay4KTrim);
+thresholdBeam.position.set(-10.75,6.03,54.55);bay4K.add(thresholdBeam);
+// Repetition supplies scale while the upper structure remains deliberately unresolved.
+for(const x of [-13.55,-16.35,-19.15]){
+ for(const z of [51.75,57.35]){
+  const pier=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.64,6.6,10),bay4KStone);
+  pier.position.set(x,2.72,z);bay4K.add(pier);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(0.74,0.84,0.30,10),bay4KTrim);
+  base.position.set(x,-0.32,z);bay4K.add(base);
+  const baseBand=new THREE.Mesh(new THREE.TorusGeometry(0.69,0.045,6,28),bay4KCool);
+  baseBand.rotation.x=Math.PI/2;baseBand.position.set(x,-0.14,z);bay4K.add(baseBand);
+ }
+ const rib=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.18,5.65),bay4KTrim);
+ rib.position.set(x,6.08,54.55);bay4K.add(rib);
+}
+// Two quiet cyan lanes carry the route law through the bay.
+for(const z of [54.20,54.90]){
+ const lane=new THREE.Mesh(new THREE.BoxGeometry(10.25,0.025,0.055),bay4KCool);
+ lane.position.set(-16.00,-0.375,z);bay4K.add(lane);
+}
+// The far landmark gives the bay a destination and a stable return bearing.
+const bay4KLandmarkRing=new THREE.Mesh(new THREE.TorusGeometry(0.86,0.055,8,44),bay4KCool);
+bay4KLandmarkRing.rotation.y=Math.PI/2;bay4KLandmarkRing.position.set(-21.15,3.05,54.55);bay4K.add(bay4KLandmarkRing);
+const bay4KLandmarkCore=new THREE.Mesh(new THREE.OctahedronGeometry(0.28,0),bay4KCool);
+bay4KLandmarkCore.scale.set(0.72,1.75,0.72);bay4KLandmarkCore.position.set(-21.12,3.05,54.55);bay4K.add(bay4KLandmarkCore);
+// Minimal pools reveal the threshold and endpoint without flattening the chamber.
+const bay4KEntryLight=new THREE.PointLight(0x63ddf5,0.34,5.2,2);bay4KEntryLight.position.set(-11.25,0.55,54.55);bay4KEntryLight.castShadow=false;bay4K.add(bay4KEntryLight);
+const bay4KEndLight=new THREE.PointLight(0x63ddf5,0.38,5.6,2);bay4KEndLight.position.set(-20.25,1.10,54.55);bay4KEndLight.castShadow=false;bay4K.add(bay4KEndLight);
+// One amber return witness keeps the inhabited Council leg readable behind the traveler.
+const bay4KReturnWitness=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.035,6,28),bay4KWarm);
+bay4KReturnWitness.rotation.y=Math.PI/2;bay4KReturnWitness.position.set(-10.54,1.02,54.55);bay4K.add(bay4KReturnWitness);
+
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
