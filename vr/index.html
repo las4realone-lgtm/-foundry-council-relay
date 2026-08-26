@@ -470,8 +470,12 @@ for(const z of [42.0,45.0,48.0]){
 }
 
 // A recessed end niche provides a readable destination and leaves room for a future doorway or live Council portal.
-const destinationBack=new THREE.Mesh(new THREE.BoxGeometry(8.7,9.2,0.52),destinationStone);
-destinationBack.position.set(0,4.15,49.05);destinationBay.add(destinationBack);
+const destinationBackLeft=new THREE.Mesh(new THREE.BoxGeometry(0.55,9.2,0.52),destinationStone);
+destinationBackLeft.position.set(-4.075,4.15,49.05);destinationBay.add(destinationBackLeft);
+const destinationBackRight=new THREE.Mesh(new THREE.BoxGeometry(5.75,9.2,0.52),destinationStone);
+destinationBackRight.position.set(1.475,4.15,49.05);destinationBay.add(destinationBackRight);
+const destinationBackLintel=new THREE.Mesh(new THREE.BoxGeometry(2.55,2.45,0.52),destinationStone);
+destinationBackLintel.position.set(-2.60,7.525,49.05);destinationBay.add(destinationBackLintel);
 const destinationNiche=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,0.18,32,1,true,0,Math.PI),destinationTrim);
 destinationNiche.rotation.set(Math.PI/2,0,Math.PI/2);destinationNiche.position.set(0,3.65,48.73);destinationBay.add(destinationNiche);
 const destinationCore=new THREE.Mesh(new THREE.OctahedronGeometry(0.48,0),destinationBlue);
@@ -522,6 +526,68 @@ const archiveCrown=new THREE.Mesh(new THREE.TorusGeometry(1.55,0.11,8,32),destin
 archiveCrown.rotation.x=Math.PI/2;archiveCrown.position.set(0,8.34,45.0);destinationBay.add(archiveCrown);
 const archiveCrownGlow=new THREE.Mesh(new THREE.CircleGeometry(0.46,24),new THREE.MeshBasicMaterial({color:0xffbd75,transparent:true,opacity:0.34,side:THREE.DoubleSide,depthWrite:false}));
 archiveCrownGlow.rotation.x=Math.PI/2;archiveCrownGlow.position.set(0,8.22,45.0);destinationBay.add(archiveCrownGlow);
+
+// ===== BATCH 4G: FIRST BRANCHING CORRIDOR — environment only =====
+// One short L-shaped route tests leaving the archive, turning, and finding the return path before corridors multiply.
+const branchGroup=new THREE.Group();scene.add(branchGroup);
+const branchStone=new THREE.MeshStandardMaterial({color:0x202c28,roughness:0.96,metalness:0.01});
+const branchTrim=new THREE.MeshStandardMaterial({color:0x42534c,roughness:0.85,metalness:0.03});
+const branchFloor=new THREE.MeshStandardMaterial({color:0x2c3d37,roughness:0.92,metalness:0.01});
+
+// First leg continues through the rear-left archive opening.
+const branchFloorNorth=new THREE.Mesh(new THREE.BoxGeometry(2.65,0.18,5.9),branchFloor);
+branchFloorNorth.position.set(-2.60,-0.34,52.0);branchGroup.add(branchFloorNorth);
+const branchInnerWall=new THREE.Mesh(new THREE.BoxGeometry(0.38,6.9,5.9),branchStone);
+branchInnerWall.position.set(-1.12,3.0,52.0);branchGroup.add(branchInnerWall);
+const branchOuterWallShort=new THREE.Mesh(new THREE.BoxGeometry(0.38,6.9,3.2),branchStone);
+branchOuterWallShort.position.set(-4.08,3.0,50.65);branchGroup.add(branchOuterWallShort);
+const branchCeilingNorth=new THREE.Mesh(new THREE.BoxGeometry(3.35,0.34,5.9),branchStone);
+branchCeilingNorth.position.set(-2.60,6.62,52.0);branchGroup.add(branchCeilingNorth);
+
+// The second leg turns left and stops deliberately at a beacon rather than implying a finished room.
+const branchFloorWest=new THREE.Mesh(new THREE.BoxGeometry(6.9,0.18,2.65),branchFloor);
+branchFloorWest.position.set(-6.9,-0.34,54.55);branchGroup.add(branchFloorWest);
+const branchFarWall=new THREE.Mesh(new THREE.BoxGeometry(6.9,6.9,0.38),branchStone);
+branchFarWall.position.set(-6.9,3.0,56.03);branchGroup.add(branchFarWall);
+const branchNearWall=new THREE.Mesh(new THREE.BoxGeometry(4.0,6.9,0.38),branchStone);
+branchNearWall.position.set(-8.35,3.0,53.08);branchGroup.add(branchNearWall);
+const branchCeilingWest=new THREE.Mesh(new THREE.BoxGeometry(6.9,0.34,3.35),branchStone);
+branchCeilingWest.position.set(-6.9,6.62,54.55);branchGroup.add(branchCeilingWest);
+const branchEndWall=new THREE.Mesh(new THREE.BoxGeometry(0.42,6.9,3.35),branchStone);
+branchEndWall.position.set(-10.35,3.0,54.55);branchGroup.add(branchEndWall);
+
+// Structural frames make the archive threshold and the turn legible from either direction.
+function addBranchFrame(x,z,rotation){
+  const leftPost=new THREE.Mesh(new THREE.BoxGeometry(0.42,6.8,0.42),pillarStone);
+  leftPost.position.set(x-1.35,3.0,z);branchGroup.add(leftPost);
+  const rightPost=leftPost.clone();rightPost.position.x=x+1.35;branchGroup.add(rightPost);
+  const topBeam=new THREE.Mesh(new THREE.BoxGeometry(3.10,0.38,0.46),branchTrim);
+  topBeam.position.set(x,6.25,z);branchGroup.add(topBeam);
+  if(rotation){
+    leftPost.position.set(x,3.0,z-1.35);rightPost.position.set(x,3.0,z+1.35);
+    topBeam.rotation.y=Math.PI/2;
+  }
+}
+addBranchFrame(-2.60,49.42,false);
+addBranchFrame(-4.28,54.55,true);
+
+// A continuous paired guide survives the turn and makes the return direction obvious.
+const northGuide=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.025,4.9),hallGuideCool);
+northGuide.position.set(-2.60,-0.225,51.75);branchGroup.add(northGuide);
+const westGuide=new THREE.Mesh(new THREE.BoxGeometry(5.6,0.025,0.055),hallGuideWarm);
+westGuide.position.set(-7.0,-0.225,54.55);branchGroup.add(westGuide);
+const turnSeal=new THREE.Mesh(new THREE.RingGeometry(0.48,0.54,28),new THREE.MeshBasicMaterial({color:0xf0a556,transparent:true,opacity:0.42,side:THREE.DoubleSide,depthWrite:false}));
+turnSeal.rotation.x=-Math.PI/2;turnSeal.position.set(-4.28,-0.215,54.55);branchGroup.add(turnSeal);
+
+// The endpoint remains intentionally incomplete: a light and a sealed arch promise the next room without building it yet.
+const branchEndArch=new THREE.Mesh(new THREE.TorusGeometry(1.25,0.12,8,28,Math.PI),branchTrim);
+branchEndArch.rotation.set(0,Math.PI/2,Math.PI/2);branchEndArch.position.set(-10.12,3.0,54.55);branchGroup.add(branchEndArch);
+const branchBeacon=new THREE.Mesh(new THREE.OctahedronGeometry(0.34,0),destinationBlue);
+branchBeacon.scale.set(0.72,1.45,0.72);branchBeacon.position.set(-9.72,2.25,54.55);branchGroup.add(branchBeacon);
+const branchWarmLight=new THREE.PointLight(0xffae62,0.54,7.5,2);
+branchWarmLight.position.set(-4.5,1.4,54.55);branchWarmLight.castShadow=false;branchGroup.add(branchWarmLight);
+const branchCoolLight=new THREE.PointLight(0x65d8ee,0.64,7.5,2);
+branchCoolLight.position.set(-8.9,2.5,54.55);branchCoolLight.castShadow=false;branchGroup.add(branchCoolLight);
 
 
 // Keep the proven irregular stone paving from Batch 3A.
