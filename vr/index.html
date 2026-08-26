@@ -485,6 +485,44 @@ destinationWarmLight.position.set(0,2.0,43.0);destinationWarmLight.castShadow=fa
 const destinationCoolLight=new THREE.PointLight(0x62d7ec,0.78,8.5,2);
 destinationCoolLight.position.set(0,3.9,47.0);destinationCoolLight.castShadow=false;destinationBay.add(destinationCoolLight);
 
+// ===== BATCH 4F: DESTINATION BAY IDENTITY — environment only =====
+// Low-cost architectural shelves make this first destination read as an archive rather than an empty corridor end.
+const archiveWood=new THREE.MeshStandardMaterial({color:0x241a13,roughness:0.88,metalness:0.01});
+const archiveBookWarm=new THREE.MeshStandardMaterial({color:0x5a3522,roughness:0.82});
+const archiveBookCool=new THREE.MeshStandardMaterial({color:0x233e45,roughness:0.82});
+function addArchiveWall(side){
+  const x=side*3.88;
+  const backing=new THREE.Mesh(new THREE.BoxGeometry(0.26,5.35,5.25),archiveWood);
+  backing.position.set(x,4.18,44.95);destinationBay.add(backing);
+  for(let level=0;level<5;level++){
+    const shelf=new THREE.Mesh(new THREE.BoxGeometry(0.48,0.12,5.3),destinationTrim);
+    shelf.position.set(x-side*0.12,2.05+level*1.05,44.95);destinationBay.add(shelf);
+    const books=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.66,4.72),level%2===0?archiveBookWarm:archiveBookCool);
+    books.position.set(x-side*0.22,2.47+level*1.05,44.95);destinationBay.add(books);
+  }
+  for(const z of [42.58,44.16,45.74,47.32]){
+    const divider=new THREE.Mesh(new THREE.BoxGeometry(0.42,5.1,0.11),destinationTrim);
+    divider.position.set(x-side*0.13,4.16,z);destinationBay.add(divider);
+  }
+}
+addArchiveWall(-1);addArchiveWall(1);
+
+// A restrained floor seal marks the center of the bay without becoming another control target.
+const archiveSealOuter=new THREE.Mesh(new THREE.RingGeometry(1.36,1.44,40),new THREE.MeshBasicMaterial({color:0x65d9ed,transparent:true,opacity:0.38,side:THREE.DoubleSide,depthWrite:false}));
+archiveSealOuter.rotation.x=-Math.PI/2;archiveSealOuter.position.set(0,-0.205,45.0);destinationBay.add(archiveSealOuter);
+const archiveSealInner=new THREE.Mesh(new THREE.RingGeometry(0.58,0.63,32),new THREE.MeshBasicMaterial({color:0xd69246,transparent:true,opacity:0.42,side:THREE.DoubleSide,depthWrite:false}));
+archiveSealInner.rotation.x=-Math.PI/2;archiveSealInner.position.set(0,-0.198,45.0);destinationBay.add(archiveSealInner);
+for(const angle of [0,Math.PI/2,Math.PI,Math.PI*1.5]){
+  const spoke=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.018,0.72),angle%Math.PI===0?hallGuideCool:hallGuideWarm);
+  spoke.rotation.y=angle;spoke.position.set(Math.sin(angle)*0.95,-0.192,45.0+Math.cos(angle)*0.95);destinationBay.add(spoke);
+}
+
+// A shallow ceiling crown gathers the existing ribs and makes the room's vertical limit legible in headset.
+const archiveCrown=new THREE.Mesh(new THREE.TorusGeometry(1.55,0.11,8,32),destinationTrim);
+archiveCrown.rotation.x=Math.PI/2;archiveCrown.position.set(0,8.34,45.0);destinationBay.add(archiveCrown);
+const archiveCrownGlow=new THREE.Mesh(new THREE.CircleGeometry(0.46,24),new THREE.MeshBasicMaterial({color:0xffbd75,transparent:true,opacity:0.34,side:THREE.DoubleSide,depthWrite:false}));
+archiveCrownGlow.rotation.x=Math.PI/2;archiveCrownGlow.position.set(0,8.22,45.0);destinationBay.add(archiveCrownGlow);
+
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
