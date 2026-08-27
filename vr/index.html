@@ -838,6 +838,58 @@ const bay4LGrazeLight=new THREE.PointLight(0xd69a43,0.22,4.2,2);
 bay4LGrazeLight.position.set(-16.20,1.02,51.96);bay4LGrazeLight.castShadow=false;bay4K.add(bay4LGrazeLight);
 
 
+// ===== BATCH 4M: FIRST-BAY MATERIAL + LOCAL LIGHT — environment only =====
+// Procedural surfaces keep the bay self-contained and preserve the protected transport stack.
+// They add readable stone/metal variation without globally brightening the Foundry.
+function makeBay4MTexture(base,vein,joint){
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
+ const ctx=canvas.getContext('2d');ctx.fillStyle=base;ctx.fillRect(0,0,256,256);
+ const image=ctx.getImageData(0,0,256,256);const data=image.data;
+ for(let y=0;y<256;y++)for(let x=0;x<256;x++){
+  const i=(y*256+x)*4;
+  const grain=Math.sin(x*0.075)+Math.sin((x+y)*0.031)+Math.sin(y*0.017);
+  const n=(Math.random()-0.5)*18+grain*4;
+  data[i]=Math.max(0,Math.min(255,data[i]+n));
+  data[i+1]=Math.max(0,Math.min(255,data[i+1]+n));
+  data[i+2]=Math.max(0,Math.min(255,data[i+2]+n));
+ }
+ ctx.putImageData(image,0,0);
+ ctx.strokeStyle=vein;ctx.globalAlpha=0.34;ctx.lineWidth=1;
+ for(let i=0;i<28;i++){
+  const y=Math.random()*256;ctx.beginPath();ctx.moveTo(0,y);
+  ctx.bezierCurveTo(70,y-8+Math.random()*16,170,y-8+Math.random()*16,256,y+Math.random()*10-5);ctx.stroke();
+ }
+ ctx.globalAlpha=0.28;ctx.strokeStyle=joint;ctx.lineWidth=2;
+ for(const y of [64,128,192]){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke();}
+ const texture=new THREE.CanvasTexture(canvas);texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+ texture.repeat.set(1.8,2.4);texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;return texture;
+}
+const bay4MWallTexture=makeBay4MTexture('#273137','#42515a','#12191d');
+const bay4MStoneTexture=makeBay4MTexture('#303638','#596064','#15191b');
+bay4LWall.map=bay4MWallTexture;bay4LWall.bumpMap=bay4MWallTexture;bay4LWall.bumpScale=0.045;
+bay4LWall.color.setHex(0x26323a);bay4LWall.roughness=0.94;bay4LWall.needsUpdate=true;
+bay4LStone.map=bay4MStoneTexture;bay4LStone.bumpMap=bay4MStoneTexture;bay4LStone.bumpScale=0.065;
+bay4LStone.color.setHex(0x343b3d);bay4LStone.roughness=0.88;bay4LStone.metalness=0.06;bay4LStone.needsUpdate=true;
+
+// Dark bronze caps are physically attached to the plinth tops; no floating signage or trim.
+const bay4MBronze=new THREE.MeshStandardMaterial({color:0x5c3a1d,roughness:0.72,metalness:0.46});
+const bay4MCapGeometry=new THREE.BoxGeometry(10.92,0.055,0.60);
+const bay4MCaps=new THREE.InstancedMesh(bay4MCapGeometry,bay4MBronze,2);
+let bay4MInstance=0;
+for(const z of [51.52,57.58]){
+ bay4LDummy.position.set(-16.00,-0.045,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+ bay4LDummy.updateMatrix();bay4MCaps.setMatrixAt(bay4MInstance++,bay4LDummy.matrix);
+}
+bay4MCaps.instanceMatrix.needsUpdate=true;bay4MCaps.frustumCulled=false;bay4K.add(bay4MCaps);
+
+// Two narrow amber pools reveal the wall/pier junctions; the upper bay remains unresolved in darkness.
+for(const [x,z] of [[-13.55,51.92],[-18.75,57.18]]){
+ const light=new THREE.PointLight(0xd69a43,0.16,3.6,2.1);
+ light.position.set(x,0.82,z);light.castShadow=false;bay4K.add(light);
+}
+const bay4MCompassGlow=new THREE.PointLight(0x45cbe8,0.12,3.2,2.2);
+bay4MCompassGlow.position.set(-20.82,3.05,54.55);bay4MCompassGlow.castShadow=false;bay4K.add(bay4MCompassGlow);
+
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
