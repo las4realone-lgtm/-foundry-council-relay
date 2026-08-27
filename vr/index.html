@@ -768,6 +768,76 @@ const bay4KEndLight=new THREE.PointLight(0x63ddf5,0.38,5.6,2);bay4KEndLight.posi
 const bay4KReturnWitness=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.035,6,28),bay4KWarm);
 bay4KReturnWitness.rotation.y=Math.PI/2;bay4KReturnWitness.position.set(-10.54,1.02,54.55);bay4K.add(bay4KReturnWitness);
 
+// ===== BATCH 4L: ATTACHED ARCHITECTURE — environment only =====
+// The 4K route remains deliberately dark. This pass attaches its cues to one physical bay
+// without touching interaction, locomotion, Council state, ledger, bridge, or offline recovery.
+const bay4LWall=new THREE.MeshStandardMaterial({color:0x0a1014,roughness:0.96,metalness:0.02});
+const bay4LStone=new THREE.MeshStandardMaterial({color:0x151d21,roughness:0.90,metalness:0.08});
+const bay4LDummy=new THREE.Object3D();
+
+// Shallow side-wall layers give the repeated piers a structural surface to belong to.
+const bay4LPanelGeometry=new THREE.BoxGeometry(2.30,5.05,0.16);
+const bay4LPanels=new THREE.InstancedMesh(bay4LPanelGeometry,bay4LWall,6);
+let bay4LInstance=0;
+for(const x of [-12.15,-14.95,-17.75]){
+ for(const z of [51.43,57.67]){
+  bay4LDummy.position.set(x,2.24,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+  bay4LDummy.updateMatrix();bay4LPanels.setMatrixAt(bay4LInstance++,bay4LDummy.matrix);
+ }
+}
+bay4LPanels.instanceMatrix.needsUpdate=true;bay4LPanels.frustumCulled=false;bay4K.add(bay4LPanels);
+
+// Pilaster backs hide the floating-cylinder read while preserving the existing pier silhouettes.
+const bay4LPilasterGeometry=new THREE.BoxGeometry(0.82,5.72,0.30);
+const bay4LPilasters=new THREE.InstancedMesh(bay4LPilasterGeometry,bay4LStone,8);
+bay4LInstance=0;
+for(const x of [-10.75,-13.55,-16.35,-19.15]){
+ for(const z of [51.50,57.60]){
+  bay4LDummy.position.set(x,2.48,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+  bay4LDummy.updateMatrix();bay4LPilasters.setMatrixAt(bay4LInstance++,bay4LDummy.matrix);
+ }
+}
+bay4LPilasters.instanceMatrix.needsUpdate=true;bay4LPilasters.frustumCulled=false;bay4K.add(bay4LPilasters);
+
+// Continuous low plinths make the floor, walls, and pier bases meet as one construction.
+const bay4LPlinthGeometry=new THREE.BoxGeometry(10.95,0.36,0.56);
+const bay4LPlinths=new THREE.InstancedMesh(bay4LPlinthGeometry,bay4LStone,2);
+bay4LInstance=0;
+for(const z of [51.52,57.58]){
+ bay4LDummy.position.set(-16.00,-0.25,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+ bay4LDummy.updateMatrix();bay4LPlinths.setMatrixAt(bay4LInstance++,bay4LDummy.matrix);
+}
+bay4LPlinths.instanceMatrix.needsUpdate=true;bay4LPlinths.frustumCulled=false;bay4K.add(bay4LPlinths);
+
+// Deeper overhead ribs connect the paired supports while leaving the ceiling unresolved in darkness.
+const bay4LRibGeometry=new THREE.BoxGeometry(0.34,0.34,6.16);
+const bay4LRibs=new THREE.InstancedMesh(bay4LRibGeometry,bay4LStone,3);
+bay4LInstance=0;
+for(const x of [-13.55,-16.35,-19.15]){
+ bay4LDummy.position.set(x,5.88,54.55);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+ bay4LDummy.updateMatrix();bay4LRibs.setMatrixAt(bay4LInstance++,bay4LDummy.matrix);
+}
+bay4LRibs.instanceMatrix.needsUpdate=true;bay4LRibs.frustumCulled=false;bay4K.add(bay4LRibs);
+
+// The far compass is now held by a real portal frame instead of floating in unresolved space.
+const bay4LPortalJambGeometry=new THREE.BoxGeometry(0.30,5.58,0.46);
+const bay4LPortalJambs=new THREE.InstancedMesh(bay4LPortalJambGeometry,bay4LStone,2);
+bay4LInstance=0;
+for(const z of [53.10,56.00]){
+ bay4LDummy.position.set(-21.34,2.34,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+ bay4LDummy.updateMatrix();bay4LPortalJambs.setMatrixAt(bay4LInstance++,bay4LDummy.matrix);
+}
+bay4LPortalJambs.instanceMatrix.needsUpdate=true;bay4LPortalJambs.frustumCulled=false;bay4K.add(bay4LPortalJambs);
+const bay4LPortalLintel=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.44,3.36),bay4LStone);
+bay4LPortalLintel.position.set(-21.34,5.16,54.55);bay4K.add(bay4LPortalLintel);
+const bay4LCompassHousing=new THREE.Mesh(new THREE.TorusGeometry(1.18,0.10,8,40),bay4LStone);
+bay4LCompassHousing.rotation.y=Math.PI/2;bay4LCompassHousing.position.set(-21.20,3.05,54.55);bay4K.add(bay4LCompassHousing);
+
+// One restrained amber grazing light reveals attachment at mid-bay without flattening the darkness.
+const bay4LGrazeLight=new THREE.PointLight(0xd69a43,0.22,4.2,2);
+bay4LGrazeLight.position.set(-16.20,1.02,51.96);bay4LGrazeLight.castShadow=false;bay4K.add(bay4LGrazeLight);
+
+
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
