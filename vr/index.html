@@ -890,6 +890,52 @@ for(const [x,z] of [[-13.55,51.92],[-18.75,57.18]]){
 const bay4MCompassGlow=new THREE.PointLight(0x45cbe8,0.12,3.2,2.2);
 bay4MCompassGlow.position.set(-20.82,3.05,54.55);bay4MCompassGlow.castShadow=false;bay4K.add(bay4MCompassGlow);
 
+// ===== BATCH 4N: FIRST-BAY RELIEF + PORTAL READABILITY — environment only =====
+// A small amount of attached relief and local light makes the 4L/4M materials legible in motion.
+// Protected interaction, locomotion, ledger, bridge, and offline-recovery code remains untouched.
+const bay4NRelief=new THREE.MeshStandardMaterial({
+ color:0x2b3336,map:bay4MStoneTexture,bumpMap:bay4MStoneTexture,bumpScale:0.035,
+ roughness:0.90,metalness:0.10
+});
+const bay4NBandGeometry=new THREE.BoxGeometry(1.72,0.12,0.07);
+const bay4NBands=new THREE.InstancedMesh(bay4NBandGeometry,bay4NRelief,12);
+let bay4NInstance=0;
+for(const x of [-12.15,-14.95,-17.75]){
+ for(const y of [1.12,3.56]){
+  for(const z of [51.56,57.54]){
+   bay4LDummy.position.set(x,y,z);bay4LDummy.rotation.set(0,0,0);bay4LDummy.scale.set(1,1,1);
+   bay4LDummy.updateMatrix();bay4NBands.setMatrixAt(bay4NInstance++,bay4LDummy.matrix);
+  }
+ }
+}
+bay4NBands.instanceMatrix.needsUpdate=true;bay4NBands.frustumCulled=false;bay4K.add(bay4NBands);
+
+// Two physically attached sconces create narrow grazing pools; the upper bay remains dark.
+const bay4NSconceStone=new THREE.BoxGeometry(0.34,0.62,0.11);
+const bay4NSconceGlow=new THREE.BoxGeometry(0.18,0.28,0.06);
+const bay4NGlowMat=new THREE.MeshBasicMaterial({color:0xd69a43,transparent:true,opacity:0.72});
+for(const z of [51.62,57.48]){
+ const bracket=new THREE.Mesh(bay4NSconceStone,bay4LStone);
+ bracket.position.set(-16.35,1.62,z);bay4K.add(bracket);
+ const glow=new THREE.Mesh(bay4NSconceGlow,bay4NGlowMat);
+ glow.position.set(-16.35,1.72,z+(z<54.55?0.075:-0.075));bay4K.add(glow);
+ const light=new THREE.PointLight(0xd69a43,0.28,3.35,2.1);
+ light.position.set(-16.15,1.56,z+(z<54.55?0.22:-0.22));light.castShadow=false;bay4K.add(light);
+}
+
+// The destination compass remains cyan/systemic, now seated inside an architectural portal.
+const bay4NPortalGlow=new THREE.MeshBasicMaterial({color:0x63ddf5,transparent:true,opacity:0.58});
+const bay4NPortalStripGeometry=new THREE.BoxGeometry(0.05,3.85,0.06);
+for(const z of [53.24,55.86]){
+ const strip=new THREE.Mesh(bay4NPortalStripGeometry,bay4NPortalGlow);
+ strip.position.set(-21.15,2.32,z);bay4K.add(strip);
+}
+const bay4NThreshold=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.028,2.72),bay4KWarm);
+bay4NThreshold.position.set(-21.15,-0.365,54.55);bay4K.add(bay4NThreshold);
+const bay4NCompassRim=new THREE.Mesh(new THREE.TorusGeometry(1.18,0.026,6,40),bay4KWarm);
+bay4NCompassRim.rotation.y=Math.PI/2;bay4NCompassRim.position.set(-21.13,3.05,54.55);bay4K.add(bay4NCompassRim);
+
+
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
 const shellFloorCtx=shellFloorCanvas.getContext('2d');shellFloorCtx.fillStyle='#1f2a26';shellFloorCtx.fillRect(0,0,1024,1024);
