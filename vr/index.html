@@ -771,13 +771,13 @@ bay4KReturnWitness.rotation.y=Math.PI/2;bay4KReturnWitness.position.set(-10.54,1
 // ===== BATCH 4L: ATTACHED ARCHITECTURE — environment only =====
 // The 4K route remains deliberately dark. This pass attaches its cues to one physical bay
 // without touching interaction, locomotion, Council state, ledger, bridge, or offline recovery.
-const =new THREE.MeshStandardMaterial({color:0x0a1014,roughness:0.96,metalness:0.02});
+const bay4LWall=new THREE.MeshStandardMaterial({color:0x0a1014,roughness:0.96,metalness:0.02});
 const bay4LStone=new THREE.MeshStandardMaterial({color:0x151d21,roughness:0.90,metalness:0.08});
 const bay4LDummy=new THREE.Object3D();
 
 // Shallow side-wall layers give the repeated piers a structural surface to belong to.
 const bay4LPanelGeometry=new THREE.BoxGeometry(2.30,5.05,0.16);
-const bay4LPanels=new THREE.InstancedMesh(bay4LPanelGeometry,,6);
+const bay4LPanels=new THREE.InstancedMesh(bay4LPanelGeometry,bay4LWall,6);
 let bay4LInstance=0;
 for(const x of [-12.15,-14.95,-17.75]){
  for(const z of [51.43,57.67]){
@@ -866,8 +866,8 @@ function makeBay4MTexture(base,vein,joint){
 }
 const bay4MWallTexture=makeBay4MTexture('#273137','#42515a','#12191d');
 const bay4MStoneTexture=makeBay4MTexture('#303638','#596064','#15191b');
-.map=bay4MWallTexture;.bumpMap=bay4MWallTexture;.bumpScale=0.045;
-.color.setHex(0x26323a);.roughness=0.94;.needsUpdate=true;
+bay4LWall.map=bay4MWallTexture;bay4LWall.bumpMap=bay4MWallTexture;bay4LWall.bumpScale=0.045;
+bay4LWall.color.setHex(0x26323a);bay4LWall.roughness=0.94;bay4LWall.needsUpdate=true;
 bay4LStone.map=bay4MStoneTexture;bay4LStone.bumpMap=bay4MStoneTexture;bay4LStone.bumpScale=0.065;
 bay4LStone.color.setHex(0x343b3d);bay4LStone.roughness=0.88;bay4LStone.metalness=0.06;bay4LStone.needsUpdate=true;
 
