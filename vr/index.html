@@ -935,6 +935,43 @@ bay4NThreshold.position.set(-21.15,-0.365,54.55);bay4K.add(bay4NThreshold);
 const bay4NCompassRim=new THREE.Mesh(new THREE.TorusGeometry(1.18,0.026,6,40),bay4KWarm);
 bay4NCompassRim.rotation.y=Math.PI/2;bay4NCompassRim.position.set(-21.13,3.05,54.55);bay4K.add(bay4NCompassRim);
 
+// ===== BATCH 4N.1: PORTAL-ONLY STONE + OPEN ACCESS — environment only =====
+// Keep this finish local: only the destination jambs, lintel, and inner reveal receive it.
+// The cyan compass becomes the access beacon above the walkable opening; amber remains the boundary.
+const bay4NPortalStoneTexture=bay4MStoneTexture.clone();
+bay4NPortalStoneTexture.needsUpdate=true;
+bay4NPortalStoneTexture.repeat.set(1.15,2.75);
+const bay4NPortalStone=new THREE.MeshStandardMaterial({
+ color:0x4b5152,map:bay4NPortalStoneTexture,bumpMap:bay4NPortalStoneTexture,
+ bumpScale:0.085,roughness:0.86,metalness:0.05
+});
+bay4LPortalJambs.material=bay4NPortalStone;
+bay4LPortalLintel.material=bay4NPortalStone;
+
+// A shallow inner reveal makes the texture readable without spreading it through the bay.
+const bay4NPortalRevealGeometry=new THREE.BoxGeometry(0.72,5.58,0.22);
+for(const z of [53.10,56.00]){
+ const reveal=new THREE.Mesh(bay4NPortalRevealGeometry,bay4NPortalStone);
+ reveal.position.set(-21.68,2.34,z);bay4K.add(reveal);
+}
+const bay4NPortalTopReveal=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.22,3.12),bay4NPortalStone);
+bay4NPortalTopReveal.position.set(-21.68,5.16,54.55);bay4K.add(bay4NPortalTopReveal);
+
+// Clear the passage: mount the compass and its housing above the opening.
+for(const part of [bay4KLandmarkRing,bay4KLandmarkCore,bay4LCompassHousing,bay4NCompassRim]){
+ part.position.y=6.50;
+}
+bay4LCompassHousing.material=bay4NPortalStone;
+
+// Complete the cyan access perimeter while preserving the amber threshold.
+const bay4NPortalTopGlow=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.06,2.68),bay4NPortalGlow);
+bay4NPortalTopGlow.position.set(-21.15,4.98,54.55);bay4K.add(bay4NPortalTopGlow);
+
+// One restrained local light reveals the portal finish without globally brightening the corridor.
+const bay4NPortalLight=new THREE.PointLight(0x63ddf5,0.24,3.6,2);
+bay4NPortalLight.position.set(-20.65,3.0,54.55);bay4NPortalLight.castShadow=false;bay4K.add(bay4NPortalLight);
+
+
 
 // Keep the proven irregular stone paving from Batch 3A.
 const shellFloorCanvas=document.createElement('canvas');shellFloorCanvas.width=shellFloorCanvas.height=1024;
