@@ -488,6 +488,88 @@ const destinationWarmLight=new THREE.PointLight(0xffb36b,0.68,8.5,2);
 destinationWarmLight.position.set(0,2.0,43.0);destinationWarmLight.castShadow=false;destinationBay.add(destinationWarmLight);
 const destinationCoolLight=new THREE.PointLight(0x62d7ec,0.78,8.5,2);
 destinationCoolLight.position.set(0,3.9,47.0);destinationCoolLight.castShadow=false;destinationBay.add(destinationCoolLight);
+// Paste immediately after the existing destinationCoolLight setup:
+// const destinationCoolLight=new THREE.PointLight(0x62d7ec,0.78,8.5,2);
+// destinationCoolLight.position.set(0,3.9,47.0);destinationCoolLight.castShadow=false;destinationBay.add(destinationCoolLight);
+
+// ===== BATCH 4N.2: OPEN PORTAL + HOUSED CREST - environment only =====
+// Keep the actual rear-left branch opening clear. The old half-cylinder read as a reversed C
+// when approached from the corridor, so the full crest now belongs to the lintel above the door.
+destinationNiche.visible=false;
+destinationCore.position.set(-2.60,7.42,48.70);
+destinationCore.scale.set(0.50,1.05,0.50);
+destinationHalo.position.set(-2.60,7.42,48.73);
+destinationHalo.material.opacity=0.34;
+
+// A small procedural stone response is restricted to this portal assembly. It adds scale and
+// surface breakup without changing the lighting or materials anywhere else in the Foundry.
+const batch4N2StoneCanvas=document.createElement('canvas');
+batch4N2StoneCanvas.width=256;batch4N2StoneCanvas.height=256;
+const batch4N2StoneCtx=batch4N2StoneCanvas.getContext('2d');
+batch4N2StoneCtx.fillStyle='#26312d';batch4N2StoneCtx.fillRect(0,0,256,256);
+for(let row=0;row<8;row++){
+  const y=row*32;
+  const offset=row%2===0?0:-24;
+  batch4N2StoneCtx.strokeStyle='rgba(8,14,12,0.72)';batch4N2StoneCtx.lineWidth=3;
+  batch4N2StoneCtx.beginPath();batch4N2StoneCtx.moveTo(0,y);batch4N2StoneCtx.lineTo(256,y);batch4N2StoneCtx.stroke();
+  for(let x=offset;x<280;x+=48){
+    batch4N2StoneCtx.beginPath();batch4N2StoneCtx.moveTo(x,y);batch4N2StoneCtx.lineTo(x,y+32);batch4N2StoneCtx.stroke();
+  }
+}
+let batch4N2StoneSeed=0x4e32;
+const batch4N2StoneRand=()=>{
+  batch4N2StoneSeed=(batch4N2StoneSeed*1664525+1013904223)>>>0;
+  return batch4N2StoneSeed/4294967296;
+};
+for(let i=0;i<220;i++){
+  const tone=34+Math.floor(batch4N2StoneRand()*24);
+  batch4N2StoneCtx.fillStyle=`rgba(${tone},${tone+10},${tone+6},0.14)`;
+  batch4N2StoneCtx.fillRect(batch4N2StoneRand()*256,batch4N2StoneRand()*256,1+batch4N2StoneRand()*3,1+batch4N2StoneRand()*3);
+}
+const batch4N2StoneTexture=new THREE.CanvasTexture(batch4N2StoneCanvas);
+batch4N2StoneTexture.wrapS=batch4N2StoneTexture.wrapT=THREE.RepeatWrapping;
+batch4N2StoneTexture.repeat.set(1.35,3.2);
+batch4N2StoneTexture.colorSpace=THREE.SRGBColorSpace;
+const batch4N2StoneMaterial=new THREE.MeshStandardMaterial({
+  color:0x34413c,map:batch4N2StoneTexture,roughness:0.92,metalness:0.01,
+  emissive:0x09120f,emissiveIntensity:0.16
+});
+const batch4N2EdgeCyan=new THREE.MeshBasicMaterial({color:0x79dce8,transparent:true,opacity:0.32,depthWrite:false});
+const batch4N2ThresholdAmber=new THREE.MeshBasicMaterial({color:0xdca756,transparent:true,opacity:0.44,depthWrite:false});
+
+function addBatch4N2PortalBox(size,position,material=batch4N2StoneMaterial){
+  const piece=new THREE.Mesh(new THREE.BoxGeometry(...size),material);
+  piece.position.set(...position);destinationBay.add(piece);return piece;
+}
+
+// Stone jambs and lintel frame, but never occupy, the 2.4 m-wide branch opening.
+addBatch4N2PortalBox([0.28,6.05,0.34],[-3.86,2.83,48.72]);
+addBatch4N2PortalBox([0.28,6.05,0.34],[-1.34,2.83,48.72]);
+addBatch4N2PortalBox([2.80,0.34,0.34],[-2.60,5.86,48.72]);
+
+// Short returns overlap the branch-wall starts and close only the visible side cracks.
+addBatch4N2PortalBox([0.48,6.20,0.92],[-4.08,3.02,49.38]);
+addBatch4N2PortalBox([0.48,6.20,0.92],[-1.12,3.02,49.38]);
+
+// Full architectural housing replaces the floating/reversed-C silhouette.
+const batch4N2CrestHousing=new THREE.Mesh(new THREE.TorusGeometry(1.16,0.105,8,36),batch4N2StoneMaterial);
+batch4N2CrestHousing.position.set(-2.60,7.42,48.77);destinationBay.add(batch4N2CrestHousing);
+const batch4N2CrestCap=new THREE.Mesh(new THREE.BoxGeometry(3.05,0.18,0.28),batch4N2StoneMaterial);
+batch4N2CrestCap.position.set(-2.60,6.20,48.75);destinationBay.add(batch4N2CrestCap);
+
+// The symbol illuminates the inside perimeter: cyan access edges, amber physical threshold.
+addBatch4N2PortalBox([0.035,5.48,0.055],[-3.68,2.83,48.50],batch4N2EdgeCyan);
+addBatch4N2PortalBox([0.035,5.48,0.055],[-1.52,2.83,48.50],batch4N2EdgeCyan);
+addBatch4N2PortalBox([2.18,0.035,0.055],[-2.60,5.56,48.50],batch4N2EdgeCyan);
+addBatch4N2PortalBox([2.18,0.035,0.15],[-2.60,-0.18,48.57],batch4N2ThresholdAmber);
+
+// Local grazing only; the corridor and all unused volume remain deliberately dark.
+const batch4N2CyanGrazing=new THREE.PointLight(0x69d8e8,0.34,3.8,2);
+batch4N2CyanGrazing.position.set(-1.78,3.15,48.05);batch4N2CyanGrazing.castShadow=false;destinationBay.add(batch4N2CyanGrazing);
+const batch4N2AmberGrazing=new THREE.PointLight(0xffb45f,0.26,3.5,2);
+batch4N2AmberGrazing.position.set(-3.44,1.65,48.08);batch4N2AmberGrazing.castShadow=false;destinationBay.add(batch4N2AmberGrazing);
+
+
 
 // ===== BATCH 4F: DESTINATION BAY IDENTITY — environment only =====
 // Low-cost architectural shelves make this first destination read as an archive rather than an empty corridor end.
