@@ -693,7 +693,7 @@ function makeBatch4N3AStoneMaterial(name,repeatX,repeatY){
   texture.name=`${name}_Texture`;texture.needsUpdate=true;
   texture.wrapS=texture.wrapT=THREE.RepeatWrapping;texture.repeat.set(repeatX,repeatY);
   const material=new THREE.MeshStandardMaterial({
-    name,color:0x3a4641,map:texture,roughness:0.92,metalness:0.01,
+    name,color:0xffffff,map:texture,roughness:0.92,metalness:0.01,
     emissive:0x0b1511,emissiveIntensity:0.18,side:THREE.DoubleSide
   });
   return material;
