@@ -99,17 +99,17 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {VRButton} from 'three/addons/webxr/VRButton.js';
 import {XRControllerModelFactory} from 'three/addons/webxr/XRControllerModelFactory.js';
 
-// ===== BATCH 4N.3A: BUILD IDENTITY =====
+// ===== BATCH 4N.3B: BUILD IDENTITY =====
 // Replace PENDING-COMMIT with the short implementation commit after GitHub creates it.
-const BATCH_4N3A_COMMIT='6504036';
-const BATCH_4N3A_STAMP=`BATCH 4N.3A | ${BATCH_4N3A_COMMIT}`;
-const batch4N3AStamp=document.createElement('span');
-batch4N3AStamp.id='batch4N3ABuildStamp';
-batch4N3AStamp.textContent=BATCH_4N3A_STAMP;
-batch4N3AStamp.style.cssText='display:inline-block;margin-left:10px;padding:2px 6px;border:1px solid #dca756;color:#ffd27a;background:#07100e;font-weight:700;letter-spacing:.5px';
-document.getElementById('help').appendChild(batch4N3AStamp);
-window.__FOUNDRY_BUILD_ID__=BATCH_4N3A_STAMP;
-console.info(`[FOUNDRY BUILD] ${BATCH_4N3A_STAMP}`);
+const BATCH_4N3B_COMMIT='PENDING-COMMIT';
+const BATCH_4N3B_STAMP=`BATCH 4N.3B | ${BATCH_4N3B_COMMIT}`;
+const batch4N3BStamp=document.createElement('span');
+batch4N3BStamp.id='batch4N3BBuildStamp';
+batch4N3BStamp.textContent=BATCH_4N3B_STAMP;
+batch4N3BStamp.style.cssText='display:inline-block;margin-left:10px;padding:2px 6px;border:1px solid #dca756;color:#ffd27a;background:#07100e;font-weight:700;letter-spacing:.5px';
+document.getElementById('help').appendChild(batch4N3BStamp);
+window.__FOUNDRY_BUILD_ID__=BATCH_4N3B_STAMP;
+console.info(`[FOUNDRY BUILD] ${BATCH_4N3B_STAMP}`);
 
 let selectedImage=null,boundImage=null;
 const thumbs={forest:'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&q=60', jerry:'https://images.unsplash.com/photo-1596003906949-67221c37965c?w=400&q=60', desert:'https://images.unsplash.com/photo-1683009427513-28e1638a292a?w=400&q=60'};
@@ -710,6 +710,44 @@ for(const mesh of [destinationBackLeft,destinationBackRight,destinationBackLinte
 for(const mesh of [branchInnerWall,branchOuterWallShort,branchCeilingNorth]){
   mesh.material=batch4N3AStoneCorridor;
 }
+// ===== BATCH 4N.3B: PORTAL-LOCAL STONE GRAZING LIGHTS =====
+const batch4N3BLeftStoneTarget=new THREE.Object3D();
+batch4N3BLeftStoneTarget.name='PortalLight_4N3B_LeftStoneTarget';
+batch4N3BLeftStoneTarget.position.set(-4.075,3.60,49.05);
+destinationBay.add(batch4N3BLeftStoneTarget);
+
+const batch4N3BLeftStoneWash=new THREE.SpotLight(
+  0xd8b17a,
+  0.42,
+  5.4,
+  Math.PI/7,
+  0.88,
+  2
+);
+batch4N3BLeftStoneWash.name='PortalLight_4N3B_LeftStoneWash';
+batch4N3BLeftStoneWash.position.set(-2.15,3.75,48.18);
+batch4N3BLeftStoneWash.target=batch4N3BLeftStoneTarget;
+batch4N3BLeftStoneWash.castShadow=false;
+destinationBay.add(batch4N3BLeftStoneWash);
+
+const batch4N3BRightStoneTarget=new THREE.Object3D();
+batch4N3BRightStoneTarget.name='PortalLight_4N3B_RightStoneTarget';
+batch4N3BRightStoneTarget.position.set(-0.15,3.85,49.05);
+destinationBay.add(batch4N3BRightStoneTarget);
+
+const batch4N3BRightStoneWash=new THREE.SpotLight(
+  0xd8b17a,
+  0.42,
+  5.4,
+  Math.PI/7,
+  0.88,
+  2
+);
+batch4N3BRightStoneWash.name='PortalLight_4N3B_RightStoneWash';
+batch4N3BRightStoneWash.position.set(-3.05,3.35,48.18);
+batch4N3BRightStoneWash.target=batch4N3BRightStoneTarget;
+batch4N3BRightStoneWash.castShadow=false;
+destinationBay.add(batch4N3BRightStoneWash);
 
 // Retire the thick/one-sided legacy visual pieces that produced the reversed-C side silhouette.
 // The amber threshold remains as the physical boundary cue.
