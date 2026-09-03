@@ -713,38 +713,38 @@ for(const mesh of [branchInnerWall,branchOuterWallShort,branchCeilingNorth]){
 // ===== BATCH 4N.3B: PORTAL-LOCAL STONE GRAZING LIGHTS =====
 const batch4N3BLeftStoneTarget=new THREE.Object3D();
 batch4N3BLeftStoneTarget.name='PortalLight_4N3B_LeftStoneTarget';
-batch4N3BLeftStoneTarget.position.set(-4.075,3.60,49.05);
+batch4N3BLeftStoneTarget.position.set(-2.15,4.20,49.05);
 destinationBay.add(batch4N3BLeftStoneTarget);
 
 const batch4N3BLeftStoneWash=new THREE.SpotLight(
   0xd8b17a,
   0.60,
   5.4,
-  Math.PI/7,
+  13*Math.PI/36,
   0.88,
   2
 );
 batch4N3BLeftStoneWash.name='PortalLight_4N3B_LeftStoneWash';
-batch4N3BLeftStoneWash.position.set(-2.15,3.75,48.18);
+batch4N3BLeftStoneWash.position.set(-2.15,3.75,46.40);
 batch4N3BLeftStoneWash.target=batch4N3BLeftStoneTarget;
 batch4N3BLeftStoneWash.castShadow=false;
 destinationBay.add(batch4N3BLeftStoneWash);
 
 const batch4N3BRightStoneTarget=new THREE.Object3D();
 batch4N3BRightStoneTarget.name='PortalLight_4N3B_RightStoneTarget';
-batch4N3BRightStoneTarget.position.set(-0.15,3.85,49.05);
+batch4N3BRightStoneTarget.position.set(-2.60,4.00,49.31);
 destinationBay.add(batch4N3BRightStoneTarget);
 
 const batch4N3BRightStoneWash=new THREE.SpotLight(
   0xd8b17a,
   0.60,
   5.4,
-  Math.PI/7,
+  13*Math.PI/36,
   0.88,
   2
 );
 batch4N3BRightStoneWash.name='PortalLight_4N3B_RightStoneWash';
-batch4N3BRightStoneWash.position.set(-3.05,3.35,48.18);
+batch4N3BRightStoneWash.position.set(-2.60,3.35,53.20);
 batch4N3BRightStoneWash.target=batch4N3BRightStoneTarget;
 batch4N3BRightStoneWash.castShadow=false;
 destinationBay.add(batch4N3BRightStoneWash);
